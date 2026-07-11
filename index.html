@@ -407,7 +407,7 @@
       var banner = new THREE.Mesh(new THREE.PlaneGeometry((HALF_W+1)*2, 1.4),
         new THREE.MeshBasicMaterial({ map:new THREE.CanvasTexture(cv), side:THREE.DoubleSide }));
       banner.position.copy(pts[0]); banner.position.y = 5.2;
-      banner.rotation.y = -Math.atan2(tans[0].x, -tans[0].z) + Math.PI/2;
+      banner.rotation.y = Math.atan2(-tans[0].x, -tans[0].z); // span ACROSS the track
       scene.add(banner);
     })();
     // trees around
@@ -896,14 +896,26 @@
     var trim = 0; // optional fine-tune from the CENTER button
     var gNow = { x:0, y:-9.8 };
     var gas = false, brake = false;
+    var baseCard = null; // latched neutral grip orientation
     function rawWheel(){
-      // wheel angle = how far gravity has rotated from the NEAREST neutral grip.
-      // Snapping to the nearest 90° means portrait and both landscape holds all
-      // read as "wheel straight" — no calibration needed, no full-lock spins.
+      // wheel angle = deviation from your LATCHED grip orientation.
+      // The grip auto-detects on pickup (portrait or either landscape) and only
+      // re-latches when you clearly re-hold the phone near a new orientation —
+      // so steering hard past 45° mid-corner can never flip on you.
       var a = Math.atan2(gNow.x, -gNow.y);
       var HALF = Math.PI / 2;
       var nearest = Math.round(a / HALF) * HALF;
-      return (a - nearest) * 180 / Math.PI;
+      if (baseCard === null) baseCard = nearest;
+      var dev = a - baseCard;
+      while (dev > Math.PI) dev -= Math.PI * 2;
+      while (dev < -Math.PI) dev += Math.PI * 2;
+      if (nearest !== baseCard && Math.abs(a - nearest) < .3 && Math.abs(dev) > Math.PI / 3){
+        baseCard = nearest; // deliberate re-grip in a new orientation
+        dev = a - baseCard;
+        while (dev > Math.PI) dev -= Math.PI * 2;
+        while (dev < -Math.PI) dev += Math.PI * 2;
+      }
+      return Math.max(-80, Math.min(80, dev * 180 / Math.PI));
     }
     function steerDeg(){ return rawWheel() - trim; }
     btnMotion.addEventListener('click', function(){
