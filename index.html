@@ -792,9 +792,7 @@
       }
 
       // chase camera
-      var back = new THREE.Vector3(Math.sin(heading), 0, -Math.cos(heading));
-      var camT = new THREE.Vector3(pos.x - back.x*8.5, 4.2 + (offroad? .3 : 0), pos.z + Math.cos(heading)*8.5*1 - 0);
-      camT.set(pos.x - Math.sin(heading)*8.5, 4.2, pos.z + Math.cos(heading)*8.5);
+      var camT = new THREE.Vector3(pos.x - Math.sin(heading)*8.5, 4.2, pos.z + Math.cos(heading)*8.5);
       camera.position.lerp(camT, Math.min(1, dt*3.2));
       var lookT = new THREE.Vector3(pos.x + Math.sin(heading)*6, 1.2, pos.z - Math.cos(heading)*6);
       camera.lookAt(lookT);
@@ -809,10 +807,12 @@
         if (clouds[ci].position.x > 260) clouds[ci].position.x = -260;
       }
 
-      // engine sound
+      // engine sound (silent at a standstill)
       if (engineOsc && AC && AC.state === 'running'){
         engineOsc.frequency.value = 55 + Math.abs(v) * 7 + (gas ? 12 : 0);
-        engineGain.gain.value = Math.min(.06, .012 + Math.abs(v) * .002 + (gas ? .015 : 0));
+        engineGain.gain.value = (Math.abs(v) < .4 && !gas)
+          ? 0
+          : Math.min(.06, .012 + Math.abs(v) * .002 + (gas ? .015 : 0));
       }
 
       // HUD
@@ -830,23 +830,24 @@
           (trackRecord ? '<br>🏆 track record: ' + fmt(trackRecord) : '');
       }
 
-      // minimap
-      mmCtx.clearRect(0, 0, 180, 180);
-      mmCtx.strokeStyle = '#8b93a3'; mmCtx.lineWidth = 7; mmCtx.lineCap = 'round';
-      mmCtx.beginPath();
-      for (var mi = 0; mi <= N; mi += 2){
-        var mp = mmPt(pts[mi % N]);
-        if (mi === 0) mmCtx.moveTo(mp[0], mp[1]); else mmCtx.lineTo(mp[0], mp[1]);
+      // minimap (skip when tab is hidden, same as the 3D render)
+      if (!document.hidden){
+        mmCtx.clearRect(0, 0, 180, 180);
+        mmCtx.strokeStyle = '#8b93a3'; mmCtx.lineWidth = 7; mmCtx.lineCap = 'round';
+        mmCtx.beginPath();
+        for (var mi = 0; mi <= N; mi += 2){
+          var mp = mmPt(pts[mi % N]);
+          if (mi === 0) mmCtx.moveTo(mp[0], mp[1]); else mmCtx.lineTo(mp[0], mp[1]);
+        }
+        mmCtx.stroke();
+        var sp0 = mmPt(pts[0]);
+        mmCtx.fillStyle = '#FFC93C';
+        mmCtx.beginPath(); mmCtx.arc(sp0[0], sp0[1], 4, 0, 7); mmCtx.fill();
+        var kp = mmPt(pos);
+        mmCtx.fillStyle = '#FF5A5F'; mmCtx.strokeStyle = '#10233F'; mmCtx.lineWidth = 2;
+        mmCtx.beginPath(); mmCtx.arc(kp[0], kp[1], 6, 0, 7); mmCtx.fill(); mmCtx.stroke();
+        renderer.render(scene, camera);
       }
-      mmCtx.stroke();
-      var sp0 = mmPt(pts[0]);
-      mmCtx.fillStyle = '#FFC93C';
-      mmCtx.beginPath(); mmCtx.arc(sp0[0], sp0[1], 4, 0, 7); mmCtx.fill();
-      var kp = mmPt(pos);
-      mmCtx.fillStyle = '#FF5A5F'; mmCtx.strokeStyle = '#10233F'; mmCtx.lineWidth = 2;
-      mmCtx.beginPath(); mmCtx.arc(kp[0], kp[1], 6, 0, 7); mmCtx.fill(); mmCtx.stroke();
-
-      if (!document.hidden) renderer.render(scene, camera);
     }
     schedule();
   }
