@@ -81,6 +81,18 @@
   #brakeBtn { background:#10233F; box-shadow:0 7px 0 #000; }
   .pedal.on { transform:translateY(4px); box-shadow:0 3px 0 rgba(0,0,0,.4) !important; }
   .warn { color:rgba(16,35,63,.78); font-weight:700; font-size:14px; max-width:340px; line-height:1.5; }
+  /* landscape racing grip: brake under left thumb, gas under right */
+  @media (orientation: landscape){
+    #phoneUI { gap:8px; padding:10px; }
+    #phoneInstr { font-size:14px; max-width:44vw; }
+    .bigbtn { max-width:44vw; padding:12px 20px; font-size:18px; }
+    #steerDial { font-size:30px; min-height:36px; }
+    .pedal { position:fixed; bottom:12px; top:12px; width:24vw; font-size:28px;
+             display:flex; align-items:center; justify-content:center; z-index:40; }
+    #brakeBtn { left:12px; }
+    #gasBtn { right:12px; }
+    .warn { display:none; }
+  }
 </style>
 </head>
 <body>
@@ -126,8 +138,8 @@
   <div id="phoneStatus">Connecting to laptop…</div>
   <button class="bigbtn" id="btnMotion" style="display:none">ENABLE MOTION SENSORS</button>
   <div id="phoneInstr" style="display:none;font-size:17px;font-weight:700;line-height:1.6;color:#fff;max-width:340px;text-shadow:0 1px 0 rgba(16,35,63,.25)">
-    Hold your phone sideways with both hands — <b>it's your steering wheel.</b><br>
-    Tilt to steer. Hold GAS to go!
+    Turn your phone <b>sideways</b> and grip it with both hands — <b>it's your steering wheel.</b><br>
+    BRAKE under your left thumb, GAS under your right. Tilt to steer!
   </div>
   <div id="steerDial"></div>
   <button class="bigbtn" id="btnCal" style="display:none">🎯 HOLD WHEEL STRAIGHT — TAP TO CENTER</button>
@@ -290,18 +302,19 @@
     }
 
     // grass
-    var ground = new THREE.Mesh(new THREE.PlaneGeometry(600, 600),
+    var ground = new THREE.Mesh(new THREE.PlaneGeometry(900, 900),
       new THREE.MeshLambertMaterial({ color:0x6cc178 }));
-    ground.rotation.x = -Math.PI/2; ground.position.set(0, 0, -50);
+    ground.rotation.x = -Math.PI/2; ground.position.set(0, 0, -60);
     ground.receiveShadow = true; scene.add(ground);
 
     /* ---------- the track: Paperclip Circuit ---------- */
     var ctrl = [
-      [0,0],[40,-6],[68,-26],[74,-64],[52,-94],[16,-90],[-2,-66],[-28,-78],
-      [-58,-96],[-84,-74],[-84,-38],[-58,-14],[-28,-16],[-12,-4]
+      [0,0],[55,-6],[95,-24],[110,-58],[100,-96],[66,-118],[30,-108],[8,-82],
+      [-18,-96],[-42,-124],[-78,-128],[-104,-100],[-100,-62],[-120,-34],
+      [-104,-6],[-66,6],[-30,-8],[-12,-2]
     ].map(function(p){ return new THREE.Vector3(p[0], 0, p[1]); });
     var curve = new THREE.CatmullRomCurve3(ctrl, true, 'catmullrom', .5);
-    var N = 260, HALF_W = 4.6;
+    var N = 380, HALF_W = 4.8;
     var pts = [], tans = [];
     for (var i = 0; i < N; i++){
       pts.push(curve.getPointAt(i/N));
@@ -325,20 +338,41 @@
       g.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
       g.setIndex(idxs);
       g.computeVertexNormals();
-      var road = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color:0x8b93a3 }));
+      var road = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color:0x555d6b }));
       road.receiveShadow = true;
       scene.add(road);
-      // dashed centerline
-      for (var d = 0; d < N; d += 6){
-        var dash = new THREE.Mesh(new THREE.PlaneGeometry(.25, 2),
-          new THREE.MeshBasicMaterial({ color:0xffffff }));
+      // solid white edge lines — it's a proper road now
+      function ribbon(offset, width, color, y){
+        var vs = [], is2 = [];
+        for (var i2 = 0; i2 <= N; i2++){
+          var ii2 = i2 % N;
+          var n3 = new THREE.Vector3(-tans[ii2].z, 0, tans[ii2].x).normalize();
+          var a2 = pts[ii2].clone().addScaledVector(n3, offset + width/2);
+          var b2 = pts[ii2].clone().addScaledVector(n3, offset - width/2);
+          vs.push(a2.x, y, a2.z, b2.x, y, b2.z);
+        }
+        for (var q2 = 0; q2 < N; q2++){
+          var s0=q2*2, s1=q2*2+1, s2=q2*2+2, s3=q2*2+3;
+          is2.push(s0,s1,s2, s1,s3,s2);
+        }
+        var g3 = new THREE.BufferGeometry();
+        g3.setAttribute('position', new THREE.Float32BufferAttribute(vs,3));
+        g3.setIndex(is2);
+        scene.add(new THREE.Mesh(g3, new THREE.MeshBasicMaterial({ color: color })));
+      }
+      ribbon(HALF_W - .35, .25, 0xffffff, .035);
+      ribbon(-(HALF_W - .35), .25, 0xffffff, .035);
+      // dashed yellow centerline
+      for (var d = 0; d < N; d += 7){
+        var dash = new THREE.Mesh(new THREE.PlaneGeometry(.25, 2.2),
+          new THREE.MeshBasicMaterial({ color:0xFFC93C }));
         dash.rotation.x = -Math.PI/2;
         dash.position.set(pts[d].x, .04, pts[d].z);
         dash.rotation.z = -Math.atan2(tans[d].x, -tans[d].z);
         scene.add(dash);
       }
       // red-white curbs at select bends
-      [20, 60, 100, 140, 180, 220].forEach(function(k){
+      [30, 80, 130, 180, 230, 280, 330].forEach(function(k){
         for (var c2 = -3; c2 <= 3; c2++){
           var kk = (k + c2 + N) % N;
           var n2 = new THREE.Vector3(-tans[kk].z, 0, tans[kk].x).normalize();
