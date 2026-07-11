@@ -102,20 +102,20 @@
 <div id="hostUI">
   <div id="canvasWrap"></div>
   <div id="connectPanel">
-    <div style="background:#FF5A5F;color:#fff;font-family:'Nunito',sans-serif;font-weight:900;font-size:13px;letter-spacing:.1em;padding:9px 18px;border-radius:100px;border:3px solid #10233F;box-shadow:0 4px 0 rgba(16,35,63,.25)">GRAB YOUR PHONE 📱 IT'S YOUR WHEEL</div>
-    <div style="font-family:'Fredoka',sans-serif;font-weight:600;font-size:30px;color:#fff;text-shadow:0 3px 0 rgba(16,35,63,.3)">Scan to start your engine!</div>
+    <div style="background:#FF5A5F;color:#fff;font-family:'Nunito',sans-serif;font-weight:900;font-size:13px;letter-spacing:.1em;padding:9px 18px;border-radius:100px;border:3px solid #10233F;box-shadow:0 4px 0 rgba(16,35,63,.25)">UP TO 4 RACERS 📱 PHONES ARE WHEELS</div>
+    <div style="font-family:'Fredoka',sans-serif;font-weight:600;font-size:30px;color:#fff;text-shadow:0 3px 0 rgba(16,35,63,.3)">Scan to join the race!</div>
     <div id="qr"></div>
-    <div class="hint">Or open this page on your phone and add <b>?join=CODE</b> to the URL.</div>
+    <div class="hint">Everyone scans the same code. Or add <b>?join=CODE</b> to this URL on your phone.</div>
     <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:12px;letter-spacing:.16em;color:rgba(255,255,255,.85)">ROOM CODE</div>
     <div id="joinCode">····</div>
     <div class="hint" id="hostNetStatus">Starting connection service…</div>
   </div>
-  <div id="hud">waiting for driver…</div>
+  <div id="hud">waiting for drivers…</div>
   <div id="settingsPanel" style="display:none;position:fixed;top:60px;left:18px;z-index:30;
     background:#fff;color:#10233F;border:4px solid #10233F;border-radius:22px;padding:18px 22px;min-width:230px;
     box-shadow:0 10px 0 rgba(16,35,63,.25);">
     <div style="font-family:'Fredoka',sans-serif;font-weight:700;font-size:18px;margin-bottom:12px;">Settings</div>
-    <div style="font-size:13px;font-weight:800;color:#8895a7;margin-bottom:6px;">Choose your driver · Desk League</div>
+    <div style="font-size:13px;font-weight:800;color:#8895a7;margin-bottom:6px;">P1 driver · Desk League</div>
     <div id="skinLabel" style="font-size:15px;font-weight:800;margin-bottom:8px;">✏️ Pencil Dude</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;">
       <button class="castBtn sel" data-char="pencil" style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;padding:8px 4px;border:3px solid #10233F;border-radius:10px;background:#FFC93C;color:#10233F">✏️ Pencil Dude</button>
@@ -131,7 +131,7 @@
     <div style="font-size:11px;font-weight:700;color:#8895a7;margin-top:8px;">click the Go Kart logo to close</div>
   </div>
   <div id="bigMsg"></div>
-  <div id="stateMsg">Waiting for driver</div>
+  <div id="stateMsg">Waiting for drivers</div>
   <canvas id="minimap" width="180" height="180" style="position:fixed;left:18px;bottom:18px;z-index:5;
     background:rgba(255,255,255,.92);border:3px solid #10233F;border-radius:16px;
     box-shadow:0 5px 0 rgba(16,35,63,.22)"></canvas>
@@ -176,7 +176,7 @@
   }
 
   /* =========================================================
-     HOST — the track, the kart, the race
+     HOST — the track, the karts, the race (up to 4 players)
      ========================================================= */
   function hostMode(){
     document.getElementById('hostUI').style.display='block';
@@ -202,20 +202,6 @@
     var hud = document.getElementById('hud');
     var stateMsg = document.getElementById('stateMsg');
     var bigMsg = document.getElementById('bigMsg');
-    var conn = null;
-
-    var peer = new Peer('gokart-'+code, { debug:1 });
-    peer.on('open', function(){ netStatus.textContent = 'Ready — waiting for your phone to scan.'; });
-    peer.on('error', function(e){ netStatus.textContent = 'Connection error: '+e.type+' (refresh to retry)'; });
-    peer.on('connection', function(c){
-      conn = c;
-      c.on('open', function(){
-        document.getElementById('connectPanel').style.display='none';
-        stateMsg.textContent = 'Driver connected — tilt your phone to steer, tap START RACE!';
-      });
-      c.on('data', onData);
-      c.on('close', function(){ stateMsg.textContent='Driver disconnected — refresh to restart'; });
-    });
 
     /* ---------- sound ---------- */
     var AC = null, engineOsc = null, engineGain = null;
@@ -271,8 +257,6 @@
     sun.shadow.camera.left = -80; sun.shadow.camera.right = 80;
     sun.shadow.camera.top = 80; sun.shadow.camera.bottom = -80;
     scene.add(sun); scene.add(sun.target);
-
-    // sky dome + sun + clouds (house style)
     (function(){
       var sg = new THREE.SphereGeometry(700, 20, 14);
       var colors = new Float32Array(sg.attributes.position.count * 3);
@@ -304,8 +288,6 @@
       sp.position.set((Math.random()-.5)*400, 70 + Math.random()*60, -60 - Math.random()*260);
       scene.add(sp); clouds.push(sp); cloudDrift.push(2 + Math.random()*3);
     }
-
-    // grass
     var ground = new THREE.Mesh(new THREE.PlaneGeometry(900, 900),
       new THREE.MeshLambertMaterial({ color:0x6cc178 }));
     ground.rotation.x = -Math.PI/2; ground.position.set(0, 0, -60);
@@ -324,7 +306,6 @@
       pts.push(curve.getPointAt(i/N));
       tans.push(curve.getTangentAt(i/N));
     }
-    // road ribbon
     (function(){
       var verts = [], idxs = [];
       for (var i = 0; i <= N; i++){
@@ -345,7 +326,6 @@
       var road = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color:0x555d6b, side:THREE.DoubleSide }));
       road.receiveShadow = true;
       scene.add(road);
-      // solid white edge lines — it's a proper road now
       function ribbon(offset, width, color, y){
         var vs = [], is2 = [];
         for (var i2 = 0; i2 <= N; i2++){
@@ -366,7 +346,6 @@
       }
       ribbon(HALF_W - .35, .25, 0xffffff, .035);
       ribbon(-(HALF_W - .35), .25, 0xffffff, .035);
-      // dashed yellow centerline
       for (var d = 0; d < N; d += 7){
         var dash = new THREE.Mesh(new THREE.PlaneGeometry(.25, 2.2),
           new THREE.MeshBasicMaterial({ color:0xFFC93C }));
@@ -375,7 +354,6 @@
         dash.rotation.z = -Math.atan2(tans[d].x, -tans[d].z);
         scene.add(dash);
       }
-      // red-white curbs at select bends
       [30, 80, 130, 180, 230, 280, 330].forEach(function(k){
         for (var c2 = -3; c2 <= 3; c2++){
           var kk = (k + c2 + N) % N;
@@ -388,7 +366,6 @@
         }
       });
     })();
-    // start/finish arch with checkers
     (function(){
       var n = new THREE.Vector3(-tans[0].z, 0, tans[0].x).normalize();
       [-1, 1].forEach(function(s){
@@ -410,7 +387,6 @@
       banner.rotation.y = Math.atan2(-tans[0].x, -tans[0].z); // span ACROSS the track
       scene.add(banner);
     })();
-    // trees around
     function makeTree(rnd){
       var g = new THREE.Group();
       var h = 3.5 + rnd()*4;
@@ -433,7 +409,6 @@
       for (var i = 0; i < 40; i++){
         var x = (Math.floor(rnd()*2)? 1 : -1) * (0 + rnd()*250) + (rnd()-.5)*80;
         var z = -rnd()*220 + 40;
-        // keep off the road
         var ok = true;
         for (var k = 0; k < N; k += 8){
           var dx = x-pts[k].x, dz = z-pts[k].z;
@@ -446,7 +421,7 @@
       }
     })();
 
-    /* ---------- the kart + Desk League driver ---------- */
+    /* ---------- Desk League builders ---------- */
     function lamb(c){ return new THREE.MeshLambertMaterial({ color:c }); }
     function part(geo, color){ var m = new THREE.Mesh(geo, lamb(color)); m.castShadow = true; return m; }
     function partAt(geo, color, x, y, z){ var m = part(geo, color); m.position.set(x,y,z); return m; }
@@ -530,95 +505,105 @@
       { id:'sticky', name:'Sticky', emoji:'📝', build:buildSticky },
       { id:'glue', name:'Glue Stick', emoji:'🧴', build:buildGlue }
     ];
+    function castById(id){
+      for (var i=0;i<CAST.length;i++) if (CAST[i].id === id) return CAST[i];
+      return CAST[0];
+    }
 
-    var kart = new THREE.Group();
-    var chassis = part(new THREE.BoxGeometry(1.4, .35, 2.3), 0xFF5A5F);
-    chassis.position.y = .45; kart.add(chassis);
-    var nose = part(new THREE.BoxGeometry(.9, .25, .5), 0xFF5A5F);
-    nose.position.set(0, .42, -1.35); kart.add(nose);
-    var seatBack = part(new THREE.BoxGeometry(1.1, .6, .18), 0x10233F);
-    seatBack.position.set(0, .85, .9); kart.add(seatBack);
-    var wheelMat = lamb(0x1c2430);
-    var wheels = [], frontWheels = [];
-    [[-.78,-.75],[.78,-.75],[-.78,.85],[.78,.85]].forEach(function(w, wi){
-      var wh = new THREE.Mesh(new THREE.CylinderGeometry(.38,.38,.3,14), wheelMat);
-      wh.rotation.z = Math.PI/2;
-      wh.castShadow = true;
-      var holder = new THREE.Group();
-      holder.position.set(w[0], .38, w[1]);
-      holder.add(wh);
-      kart.add(holder);
-      wheels.push(wh);
-      if (wi < 2) frontWheels.push(holder);
-    });
-    var steerCol = part(new THREE.CylinderGeometry(.04,.04,.5,8), 0x10233F);
-    steerCol.rotation.x = .8; steerCol.position.set(0,.85,-.35); kart.add(steerCol);
-    var wheelRim = part(new THREE.TorusGeometry(.22,.045,8,16), 0x10233F);
-    wheelRim.rotation.x = .8; wheelRim.position.set(0,1.02,-.52); kart.add(wheelRim);
-    var driverSeat = new THREE.Group();
-    driverSeat.position.set(0, .55, .35);
-    driverSeat.scale.set(.75,.75,.75);
-    driverSeat.rotation.y = Math.PI; // face forward (-z)
-    kart.add(driverSeat);
-    scene.add(kart);
-    var currentBody = null;
-    function setCharacter(id){
-      var def = null;
-      for (var i=0;i<CAST.length;i++) if (CAST[i].id===id) def = CAST[i];
-      def = def || CAST[0];
-      if (currentBody) driverSeat.remove(currentBody);
-      currentBody = def.build();
-      driverSeat.add(currentBody);
-      try { localStorage.setItem('gogames_character', def.id); } catch(e){}
-      var lbl = document.getElementById('skinLabel');
-      if (lbl) lbl.textContent = def.emoji + ' ' + def.name;
-      Array.prototype.forEach.call(document.querySelectorAll('.castBtn'), function(b){
-        var sel = b.getAttribute('data-char') === def.id;
-        b.style.background = sel ? '#FFC93C' : '#fff';
+    /* ---------- multiplayer karts ---------- */
+    var KART_COLORS = [0xFF5A5F, 0xFFC93C, 0x2FBF71, 0x8a53d6];
+    var karts = [];
+    function buildKartMesh(color){
+      var g = new THREE.Group();
+      var chassis = part(new THREE.BoxGeometry(1.4,.35,2.3), color); chassis.position.y=.45; g.add(chassis);
+      var nose = part(new THREE.BoxGeometry(.9,.25,.5), color); nose.position.set(0,.42,-1.35); g.add(nose);
+      var seatB = part(new THREE.BoxGeometry(1.1,.6,.18), 0x10233F); seatB.position.set(0,.85,.9); g.add(seatB);
+      var wheels=[], fronts=[];
+      [[-.78,-.75],[.78,-.75],[-.78,.85],[.78,.85]].forEach(function(w,wi){
+        var wh = new THREE.Mesh(new THREE.CylinderGeometry(.38,.38,.3,14), lamb(0x1c2430));
+        wh.rotation.z = Math.PI/2; wh.castShadow = true;
+        var hold = new THREE.Group(); hold.position.set(w[0],.38,w[1]); hold.add(wh); g.add(hold);
+        wheels.push(wh); if (wi<2) fronts.push(hold);
+      });
+      var col2 = part(new THREE.CylinderGeometry(.04,.04,.5,8),0x10233F); col2.rotation.x=.8; col2.position.set(0,.85,-.35); g.add(col2);
+      var rim = part(new THREE.TorusGeometry(.22,.045,8,16),0x10233F); rim.rotation.x=.8; rim.position.set(0,1.02,-.52); g.add(rim);
+      var seat = new THREE.Group(); seat.position.set(0,.55,.35); seat.scale.set(.75,.75,.75); seat.rotation.y=Math.PI; g.add(seat);
+      return { group:g, wheels:wheels, fronts:fronts, seat:seat };
+    }
+    var p1Char = 'pencil';
+    try { p1Char = localStorage.getItem('gogames_character') || 'pencil'; } catch(e){}
+    function gridPlace(k, slot){
+      var backI = (N - 4 - Math.floor(slot/2)*5 + N) % N;
+      var n = new THREE.Vector3(-tans[backI].z, 0, tans[backI].x).normalize();
+      k.pos.copy(pts[backI]).addScaledVector(n, (slot % 2 === 0 ? -1.1 : 1.1) * 1.9);
+      k.heading = Math.atan2(tans[backI].x, -tans[backI].z);
+      k.v = 0; k.steerSmooth = 0; k.curIdx = backI; k.halfFlag = false;
+    }
+    function swapDriver(k, charId){
+      while (k.mesh.seat.children.length) k.mesh.seat.remove(k.mesh.seat.children[0]);
+      var def = castById(charId);
+      k.mesh.seat.add(def.build());
+      k.charEmoji = def.emoji; k.charName = def.name;
+    }
+    function addKart(c){
+      var slot = karts.length;
+      if (slot >= 4) return null;
+      var m = buildKartMesh(KART_COLORS[slot]);
+      scene.add(m.group);
+      var k = {
+        conn: c, name: 'P' + (slot+1), slot: slot, color: KART_COLORS[slot],
+        mesh: m, pos: pts[0].clone(), heading: 0,
+        v: 0, steerSmooth: 0, ctl: { s:0, g:false, b:false },
+        curIdx: 0, offroad: false, wasOff: false,
+        lap: 0, lapStart: 0, lapTimes: [], bestLap: null, halfFlag: false,
+        finished: false, finishTime: null, auto: false, nextSkid: 0
+      };
+      swapDriver(k, slot === 0 ? p1Char : CAST[(slot * 2 + 1) % CAST.length].id);
+      gridPlace(k, slot);
+      karts.push(k);
+      return k;
+    }
+    function broadcast(msg){
+      karts.forEach(function(k){
+        try { if (k.conn && k.conn.open) k.conn.send(msg); } catch(e){}
       });
     }
-    try { setCharacter(localStorage.getItem('gogames_character') || 'pencil'); }
-    catch(e){ setCharacter('pencil'); }
-    Array.prototype.forEach.call(document.querySelectorAll('.castBtn'), function(b){
-      b.addEventListener('click', function(){ setCharacter(b.getAttribute('data-char')); });
-    });
-    var settingsPanel = document.getElementById('settingsPanel');
-    document.getElementById('logo').addEventListener('click', function(){
-      settingsPanel.style.display = (settingsPanel.style.display === 'none') ? 'block' : 'none';
+
+    /* ---------- connections ---------- */
+    var peer = new Peer('gokart-'+code, { debug:1 });
+    peer.on('open', function(){ netStatus.textContent = 'Ready — up to 4 phones can scan.'; });
+    peer.on('error', function(e){ netStatus.textContent = 'Connection error: '+e.type+' (refresh to retry)'; });
+    peer.on('connection', function(c){
+      c.on('open', function(){
+        var k = null;
+        for (var i = 0; i < karts.length; i++){
+          if (!karts[i].conn && !karts[i].auto){ k = karts[i]; break; }
+        }
+        if (k) k.conn = c; else k = addKart(c);
+        if (!k){ c.send({ t:'result', line: 'Race is full — 4 max!' }); return; }
+        document.getElementById('connectPanel').style.display = 'none';
+        var count = karts.filter(function(x){ return x.conn || x.auto; }).length;
+        stateMsg.textContent = k.name + ' joined as ' + k.charName + '! ' + count + ' racer' + (count>1?'s':'') + ' — any phone taps START RACE';
+        c.send({ t:'result', line: 'You are ' + k.name + ' ' + k.charEmoji });
+        c.on('data', function(msg){ onData(msg, k); });
+        c.on('close', function(){ k.conn = null; stateMsg.textContent = k.name + ' disconnected'; });
+      });
     });
 
-    /* ---------- race state & physics ---------- */
-    var pos = pts[0].clone();
-    var heading = Math.atan2(tans[0].x, -tans[0].z);
-    var v = 0, curIdx = 0, offroad = false;
-    var ctl = { s:0, g:false, b:false };
-    var kb = { l:false, r:false, u:false, d:false };
-    var steerSmooth = 0;
-    var race = 'idle'; // idle | count | racing | done
-    var countStart = 0, lastCountBeep = -1;
-    var raceStart = 0, lapStart = 0, lap = 0, LAPS = 3;
-    var lapTimes = [], bestLap = null, halfFlag = false;
-    var wrongWay = false, wasOffroad = false, nextSkid = 0;
+    /* ---------- race state ---------- */
+    var race = 'idle';
+    var countStart = 0, lastCountBeep = -1, raceStart = 0;
+    var LAPS = 3;
     var trackRecord = null;
     try { trackRecord = +localStorage.getItem('gokart_best') || null; } catch(e){}
-    // minimap setup
-    var mmCtx = document.getElementById('minimap').getContext('2d');
-    var mmB = (function(){
-      var minX=1e9,maxX=-1e9,minZ=1e9,maxZ=-1e9;
-      pts.forEach(function(p){
-        minX=Math.min(minX,p.x); maxX=Math.max(maxX,p.x);
-        minZ=Math.min(minZ,p.z); maxZ=Math.max(maxZ,p.z);
-      });
-      var s = 148 / Math.max(maxX-minX, maxZ-minZ);
-      return { minX:minX, minZ:minZ, s:s,
-        ox: (180-(maxX-minX)*s)/2, oy: (180-(maxZ-minZ)*s)/2 };
-    })();
-    function mmPt(p){ return [(p.x-mmB.minX)*mmB.s+mmB.ox, (p.z-mmB.minZ)*mmB.s+mmB.oy]; }
+    var kb = { l:false, r:false, u:false, d:false };
     addEventListener('keydown', function(e){
+      if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].indexOf(e.key) > -1 && !karts.length) addKart(null);
       if (e.key==='ArrowLeft') kb.l = true;
       if (e.key==='ArrowRight') kb.r = true;
       if (e.key==='ArrowUp') kb.u = true;
       if (e.key==='ArrowDown') kb.d = true;
+      if (e.key===' ' && karts.length && race !== 'count') startRace();
     });
     addEventListener('keyup', function(e){
       if (e.key==='ArrowLeft') kb.l = false;
@@ -631,81 +616,138 @@
       return Math.floor(s/60) + ':' + ('0' + (s % 60).toFixed(2)).slice(-5);
     }
     function startRace(){
-      pos.copy(pts[0]); heading = Math.atan2(tans[0].x, -tans[0].z);
-      v = 0; curIdx = 0; lap = 0; lapTimes = []; halfFlag = false;
+      karts.forEach(function(k, i){
+        gridPlace(k, i);
+        k.lap = 0; k.lapTimes = []; k.bestLap = null;
+        k.finished = false; k.finishTime = null;
+      });
       race = 'count'; countStart = performance.now(); lastCountBeep = -1;
       bigMsg.style.display = 'block';
       stateMsg.textContent = 'Get ready…';
     }
-    function onData(msg){
-      if (!msg || !msg.t) return;
+    function onData(msg, k){
+      if (!msg || !msg.t || !k) return;
       if (msg.t === 'ctl'){
-        ctl.s = msg.s || 0;
-        ctl.g = !!msg.g;
-        ctl.b = !!msg.b;
+        k.ctl.s = msg.s || 0;
+        k.ctl.g = !!msg.g;
+        k.ctl.b = !!msg.b;
       }
-      else if (msg.t === 'arm'){ startRace(); }
+      else if (msg.t === 'arm'){ if (race !== 'count') startRace(); }
     }
     window._gk = {
-      state: function(){ return { race: race, lap: lap, v: +v.toFixed(1), idx: curIdx,
-        x: +pos.x.toFixed(1), z: +pos.z.toFixed(1), offroad: offroad,
-        laps: lapTimes.map(fmt), best: bestLap ? fmt(bestLap) : null }; },
-      ctl: function(s, g, b){ onData({ t:'ctl', s:s, g:g, b:b }); },
-      arm: function(){ startRace(); },
-      auto: function(on){ autoDrive = !!on; },
+      state: function(){ return { race: race, karts: karts.map(function(k){
+        return { name: k.name, lap: k.lap, v: +k.v.toFixed(1), idx: k.curIdx,
+          finished: k.finished, time: k.finishTime ? fmt(k.finishTime) : null,
+          best: k.bestLap ? fmt(k.bestLap) : null }; }) }; },
+      ctl: function(s, g, b){ if (karts[0]) onData({ t:'ctl', s:s, g:g, b:b }, karts[0]); },
+      arm: function(){ if (!karts.length) addKart(null); startRace(); },
+      auto: function(on){ if (!karts.length) addKart(null); karts[0].auto = !!on; },
+      bot: function(){ var k = addKart(null); if (k) k.auto = true; return k ? k.name : 'full'; },
       render: function(){ renderer.render(scene, camera); }
     };
-    var autoDrive = false;
 
-    function updateProgress(){
-      var best = curIdx, bestD = 1e9;
-      for (var k = -10; k <= 10; k++){
-        var i2 = ((curIdx + k) % N + N) % N;
-        var dx = pos.x - pts[i2].x, dz = pos.z - pts[i2].z;
+    /* ---------- settings ---------- */
+    function setCharacter(id){
+      var def = castById(id);
+      p1Char = def.id;
+      try { localStorage.setItem('gogames_character', def.id); } catch(e){}
+      if (karts[0]) swapDriver(karts[0], def.id);
+      var lbl = document.getElementById('skinLabel');
+      if (lbl) lbl.textContent = def.emoji + ' ' + def.name;
+      Array.prototype.forEach.call(document.querySelectorAll('.castBtn'), function(b){
+        b.style.background = (b.getAttribute('data-char') === def.id) ? '#FFC93C' : '#fff';
+      });
+    }
+    setCharacter(p1Char);
+    Array.prototype.forEach.call(document.querySelectorAll('.castBtn'), function(b){
+      b.addEventListener('click', function(){ setCharacter(b.getAttribute('data-char')); });
+    });
+    var settingsPanel = document.getElementById('settingsPanel');
+    document.getElementById('logo').addEventListener('click', function(){
+      settingsPanel.style.display = (settingsPanel.style.display === 'none') ? 'block' : 'none';
+    });
+
+    /* ---------- minimap ---------- */
+    var mmCtx = document.getElementById('minimap').getContext('2d');
+    var mmB = (function(){
+      var minX=1e9,maxX=-1e9,minZ=1e9,maxZ=-1e9;
+      pts.forEach(function(p){
+        minX=Math.min(minX,p.x); maxX=Math.max(maxX,p.x);
+        minZ=Math.min(minZ,p.z); maxZ=Math.max(maxZ,p.z);
+      });
+      var s = 148 / Math.max(maxX-minX, maxZ-minZ);
+      return { minX:minX, minZ:minZ, s:s,
+        ox: (180-(maxX-minX)*s)/2, oy: (180-(maxZ-minZ)*s)/2 };
+    })();
+    function mmPt(p){ return [(p.x-mmB.minX)*mmB.s+mmB.ox, (p.z-mmB.minZ)*mmB.s+mmB.oy]; }
+    function cssColor(hex){ return '#' + ('00000' + hex.toString(16)).slice(-6); }
+
+    /* ---------- per-kart progress & laps ---------- */
+    function progressOf(k){
+      return k.lap * N + k.curIdx;
+    }
+    function updateProgress(k, now){
+      var best = k.curIdx, bestD = 1e9;
+      for (var w = -10; w <= 10; w++){
+        var i2 = ((k.curIdx + w) % N + N) % N;
+        var dx = k.pos.x - pts[i2].x, dz = k.pos.z - pts[i2].z;
         var d = dx*dx + dz*dz;
         if (d < bestD){ bestD = d; best = i2; }
       }
-      var prev = curIdx;
-      curIdx = best;
-      offroad = bestD > (HALF_W + .4) * (HALF_W + .4);
-      if (offroad && !wasOffroad && conn) conn.send({ t:'buzz' }); // rumble the wheel
-      wasOffroad = offroad;
-      var tanDot = Math.sin(heading)*tans[curIdx].x - Math.cos(heading)*tans[curIdx].z;
-      wrongWay = (v > 3 && tanDot < -.3);
-      if (curIdx > N*.5) halfFlag = true;
-      if (race === 'racing' && halfFlag && prev > N*.85 && curIdx < N*.15){
-        var now = performance.now();
-        var lt = now - lapStart;
-        lapTimes.push(lt);
-        if (!bestLap || lt < bestLap) bestLap = lt;
-        lap++;
-        halfFlag = false;
-        lapStart = now;
-        if (lap >= LAPS){
-          race = 'done';
-          var total = now - raceStart;
-          var newRec = !trackRecord || bestLap < trackRecord;
-          if (newRec){
-            trackRecord = bestLap;
-            try { localStorage.setItem('gokart_best', Math.round(bestLap)); } catch(e){}
-          }
-          bigMsg.innerHTML = '🏁 FINISH!' + (newRec ? '<br><span style="font-size:38px;color:#FFC93C">🏆 NEW TRACK RECORD!</span>' : '') +
-            '<br><span style="font-size:34px">total ' + fmt(total) +
-            ' · best lap ' + fmt(bestLap) + '</span><br><span style="font-size:22px">tap START RACE to go again</span>';
+      var prev = k.curIdx;
+      k.curIdx = best;
+      k.offroad = bestD > (HALF_W + .4) * (HALF_W + .4);
+      if (k.offroad && !k.wasOff && k.conn){
+        try { k.conn.send({ t:'buzz' }); } catch(e){}
+      }
+      k.wasOff = k.offroad;
+      if (k.curIdx > N*.5) k.halfFlag = true;
+      if (race === 'racing' && !k.finished && k.halfFlag && prev > N*.85 && k.curIdx < N*.15){
+        var lt = now - k.lapStart;
+        k.lapTimes.push(lt);
+        if (!k.bestLap || lt < k.bestLap) k.bestLap = lt;
+        k.lap++;
+        k.halfFlag = false;
+        k.lapStart = now;
+        if (k.lap >= LAPS){
+          k.finished = true;
+          k.finishTime = now - raceStart;
+          beep(880,.3,'triangle',.22);
+          bigMsg.textContent = '🏁 ' + k.name + ' FINISHED!';
           bigMsg.style.display = 'block';
-          beep(880,.4,'triangle',.25); setTimeout(function(){ beep(1170,.5,'triangle',.25); }, 180);
-          stateMsg.textContent = 'Race complete!';
-          if (conn) conn.send({ t:'result', line: 'FINISH · ' + fmt(total) + ' · best ' + fmt(bestLap) });
+          setTimeout(function(){ if (race === 'racing') bigMsg.style.display = 'none'; }, 1400);
+          if (k.conn){ try { k.conn.send({ t:'result', line: '🏁 Finished! ' + fmt(k.finishTime) }); } catch(e){} }
+          maybeEndRace(now);
         } else {
-          bigMsg.textContent = 'LAP ' + (lap+1) + '/' + LAPS;
-          bigMsg.style.display = 'block';
-          setTimeout(function(){ if (race === 'racing') bigMsg.style.display='none'; }, 1200);
-          beep(660,.2,'triangle',.2);
-          if (conn) conn.send({ t:'result', line: 'Lap ' + lap + ': ' + fmt(lt) });
+          beep(660,.18,'triangle',.18);
+          if (k.conn){ try { k.conn.send({ t:'result', line: 'Lap ' + k.lap + ': ' + fmt(lt) }); } catch(e){} }
         }
       }
     }
+    function maybeEndRace(now){
+      var active = karts.filter(function(k){ return k.conn || k.auto || k.slot === 0; });
+      if (!active.length || !active.every(function(k){ return k.finished; })) return;
+      race = 'done';
+      var order = active.slice().sort(function(a,b){ return a.finishTime - b.finishTime; });
+      var bestOfRace = null;
+      active.forEach(function(k){ if (k.bestLap && (!bestOfRace || k.bestLap < bestOfRace)) bestOfRace = k.bestLap; });
+      var newRec = bestOfRace && (!trackRecord || bestOfRace < trackRecord);
+      if (newRec){
+        trackRecord = bestOfRace;
+        try { localStorage.setItem('gokart_best', Math.round(bestOfRace)); } catch(e){}
+      }
+      var medals = ['🥇','🥈','🥉','4.'];
+      bigMsg.innerHTML = '🏁 RESULTS' + (newRec ? '<br><span style="font-size:34px;color:#FFC93C">🏆 NEW TRACK RECORD!</span>' : '') +
+        '<br><span style="font-size:32px">' +
+        order.map(function(k, i){ return medals[i] + ' ' + k.name + ' ' + (k.charEmoji||'') + ' — ' + fmt(k.finishTime); }).join('<br>') +
+        '</span><br><span style="font-size:20px">tap START RACE to go again</span>';
+      bigMsg.style.display = 'block';
+      stateMsg.textContent = 'Race complete!';
+      broadcast({ t:'result', line: 'Winner: ' + order[0].name + ' ' + (order[0].charEmoji||'') });
+      beep(880,.4,'triangle',.25); setTimeout(function(){ beep(1170,.5,'triangle',.25); }, 180);
+    }
 
+    /* ---------- game loop ---------- */
     var last = performance.now();
     var clockWorker = null;
     try {
@@ -723,114 +765,115 @@
     document.addEventListener('visibilitychange', function(){
       if (!document.hidden){ last = performance.now(); schedule(); }
     });
+    function stepKart(k, dt, now){
+      if (k.auto && race !== 'count'){
+        var tgt = pts[(k.curIdx + 9) % N];
+        var desired = Math.atan2(tgt.x - k.pos.x, -(tgt.z - k.pos.z));
+        var dh = desired - k.heading;
+        while (dh > Math.PI) dh -= Math.PI*2;
+        while (dh < -Math.PI) dh += Math.PI*2;
+        k.ctl.s = Math.max(-50, Math.min(50, dh * 90));
+        k.ctl.g = Math.abs(dh) < .9;
+        k.ctl.b = false;
+      }
+      var gas = k.ctl.g || (k.slot === 0 && kb.u);
+      var brake = k.ctl.b || (k.slot === 0 && kb.d);
+      if (race === 'count'){ gas = false; brake = false; }
+      var steerIn = k.ctl.s + (k.slot === 0 ? (kb.l ? -32 : 0) + (kb.r ? 32 : 0) : 0);
+      k.steerSmooth += (steerIn - k.steerSmooth) * Math.min(1, dt*10);
+      var steerN = Math.max(-1, Math.min(1, k.steerSmooth / 38));
+      var maxV = k.offroad ? 10 : 30;
+      if (gas) k.v += 13 * dt;
+      if (brake) k.v -= 24 * dt;
+      k.v -= k.v * (k.offroad ? 1.7 : .45) * dt;
+      k.v = Math.max(-6, Math.min(maxV, k.v));
+      if (Math.abs(k.v) > .3){
+        k.heading += steerN * 2.0 * dt * Math.min(1, Math.abs(k.v)/7) * (k.v < 0 ? -1 : 1);
+      }
+      k.pos.x += Math.sin(k.heading) * k.v * dt;
+      k.pos.z += -Math.cos(k.heading) * k.v * dt;
+      updateProgress(k, now);
+      k.mesh.group.position.set(k.pos.x, 0, k.pos.z);
+      k.mesh.group.rotation.y = -k.heading;
+      k.mesh.group.rotation.z = -steerN * .09 * Math.min(1, Math.abs(k.v)/12);
+      k.mesh.fronts.forEach(function(h){ h.rotation.y = -steerN * .5; });
+      k.mesh.wheels.forEach(function(w){ w.rotation.x += k.v * dt / .38; });
+      k.mesh.seat.position.y = .55 + Math.sin(now*.02 + k.slot) * .012 * Math.min(1, Math.abs(k.v)/5);
+      k.mesh.seat.rotation.z = steerN * .17 * Math.min(1, Math.abs(k.v)/10);
+      if (race === 'racing' && Math.abs(steerN) > .75 && Math.abs(k.v) > 15 && now > k.nextSkid){
+        k.nextSkid = now + 300;
+        beep(95, .16, 'sawtooth', .06);
+      }
+      return gas;
+    }
     function tick(now){
       schedule();
       var dt = Math.min((now - last)/1000, .1); last = now;
 
-      // countdown
       if (race === 'count'){
         var ct = now - countStart;
         var n3 = 3 - Math.floor(ct/1000);
         if (n3 !== lastCountBeep && n3 > 0){
           lastCountBeep = n3;
           beep(440,.18,'square',.2);
-          if (conn) conn.send({ t:'result', line: n3 + '…' });
+          broadcast({ t:'result', line: n3 + '…' });
         }
         if (ct < 3000){ bigMsg.textContent = n3; }
         else {
-          race = 'racing'; raceStart = now; lapStart = now;
+          race = 'racing'; raceStart = now;
+          karts.forEach(function(k){ k.lapStart = now; });
           bigMsg.textContent = 'GO!';
           beep(880,.35,'square',.25);
-          if (conn) conn.send({ t:'result', line: '🏁 GO!' });
+          broadcast({ t:'result', line: '🏁 GO!' });
           setTimeout(function(){ if (race==='racing') bigMsg.style.display='none'; }, 900);
-          stateMsg.textContent = 'Lap 1 of ' + LAPS + ' — send it!';
+          stateMsg.textContent = LAPS + ' laps — send it!';
         }
       }
 
-      // physics
-      if (autoDrive && race !== 'count'){
-        var tgt = pts[(curIdx + 9) % N];
-        var desired = Math.atan2(tgt.x - pos.x, -(tgt.z - pos.z));
-        var dh = desired - heading;
-        while (dh > Math.PI) dh -= Math.PI*2;
-        while (dh < -Math.PI) dh += Math.PI*2;
-        ctl.s = Math.max(-50, Math.min(50, dh * 90));
-        ctl.g = Math.abs(dh) < .9;
-        ctl.b = false;
-      }
-      var gas = ctl.g || kb.u, brake = ctl.b || kb.d;
-      if (race === 'count'){ gas = false; brake = false; }
-      var steerIn = ctl.s + (kb.l ? -32 : 0) + (kb.r ? 32 : 0);
-      steerSmooth += (steerIn - steerSmooth) * Math.min(1, dt*10);
-      var steerN = Math.max(-1, Math.min(1, steerSmooth / 38));
-      var maxV = offroad ? 10 : 30;
-      if (gas) v += 13 * dt;
-      if (brake) v -= 24 * dt;
-      v -= v * (offroad ? 1.7 : .45) * dt;
-      v = Math.max(-6, Math.min(maxV, v));
-      if (Math.abs(v) > .3){
-        heading += steerN * 2.0 * dt * Math.min(1, Math.abs(v)/7) * (v < 0 ? -1 : 1);
-      }
-      pos.x += Math.sin(heading) * v * dt;
-      pos.z += -Math.cos(heading) * v * dt;
-      updateProgress();
+      var anyGas = false;
+      karts.forEach(function(k){ if (stepKart(k, dt, now)) anyGas = true; });
 
-      // kart visuals
-      kart.position.set(pos.x, 0, pos.z);
-      kart.rotation.y = -heading;
-      kart.rotation.z = -steerN * .09 * Math.min(1, Math.abs(v)/12); // lean
-      frontWheels.forEach(function(h){ h.rotation.y = -steerN * .5; });
-      wheels.forEach(function(w){ w.rotation.x += v * dt / .38; });
-      driverSeat.position.y = .55 + Math.sin(now*.02) * .012 * Math.min(1, Math.abs(v)/5); // engine judder
-      driverSeat.rotation.z = steerN * .17 * Math.min(1, Math.abs(v)/10); // lean into corners
-      camera.fov = 62 + Math.min(14, Math.abs(v) * .45); // speed rush
-      camera.updateProjectionMatrix();
-      // tire chirp on hard cornering
-      if (race === 'racing' && Math.abs(steerN) > .75 && Math.abs(v) > 15 && now > nextSkid){
-        nextSkid = now + 300;
-        beep(95, .16, 'sawtooth', .07);
+      var lead = karts[0];
+      karts.forEach(function(k){ if (lead && progressOf(k) > progressOf(lead)) lead = k; });
+      if (lead){
+        var camT = new THREE.Vector3(
+          lead.pos.x - Math.sin(lead.heading)*8.5, 4.2, lead.pos.z + Math.cos(lead.heading)*8.5);
+        camera.position.lerp(camT, Math.min(1, dt*3.2));
+        camera.lookAt(lead.pos.x + Math.sin(lead.heading)*6, 1.2, lead.pos.z - Math.cos(lead.heading)*6);
+        camera.fov = 62 + Math.min(14, Math.abs(lead.v) * .45);
+        camera.updateProjectionMatrix();
+        sun.position.set(lead.pos.x + 40, 70, lead.pos.z + 30);
+        sun.target.position.set(lead.pos.x, 0, lead.pos.z);
       }
 
-      // chase camera
-      var camT = new THREE.Vector3(pos.x - Math.sin(heading)*8.5, 4.2, pos.z + Math.cos(heading)*8.5);
-      camera.position.lerp(camT, Math.min(1, dt*3.2));
-      var lookT = new THREE.Vector3(pos.x + Math.sin(heading)*6, 1.2, pos.z - Math.cos(heading)*6);
-      camera.lookAt(lookT);
-
-      // sun shadows follow
-      sun.position.set(pos.x + 40, 70, pos.z + 30);
-      sun.target.position.set(pos.x, 0, pos.z);
-
-      // clouds
       for (var ci = 0; ci < clouds.length; ci++){
         clouds[ci].position.x += cloudDrift[ci] * dt;
         if (clouds[ci].position.x > 260) clouds[ci].position.x = -260;
       }
 
-      // engine sound (silent at a standstill)
       if (engineOsc && AC && AC.state === 'running'){
-        engineOsc.frequency.value = 55 + Math.abs(v) * 7 + (gas ? 12 : 0);
-        engineGain.gain.value = (Math.abs(v) < .4 && !gas)
+        var lv = lead ? Math.abs(lead.v) : 0;
+        engineOsc.frequency.value = 55 + lv * 7 + (anyGas ? 12 : 0);
+        engineGain.gain.value = (lv < .4 && !anyGas)
           ? 0
-          : Math.min(.06, .012 + Math.abs(v) * .002 + (gas ? .015 : 0));
+          : Math.min(.06, .012 + lv * .002 + (anyGas ? .015 : 0));
       }
 
-      // HUD
-      if (race === 'racing'){
-        hud.innerHTML = 'LAP ' + Math.min(lap+1, LAPS) + '/' + LAPS +
-          '<br>time: ' + fmt(now - lapStart) +
-          '<br>' + (bestLap ? 'best: ' + fmt(bestLap) : '&nbsp;') +
-          '<br>' + Math.round(Math.abs(v) * 2.4) + ' mph' + (offroad ? ' · 🌿 GRASS!' : '') +
-          (wrongWay ? '<br><span style="color:#FF5A5F">⛔ WRONG WAY!</span>' : '');
-      } else if (race === 'done'){
-        // keep final HUD
+      if (race === 'racing' || race === 'done'){
+        hud.innerHTML = karts.map(function(k){
+          return '<span style="color:' + cssColor(k.color) + '">●</span> ' + k.name + ' ' + (k.charEmoji||'') +
+            (k.finished ? ' 🏁 ' + fmt(k.finishTime)
+              : ' · L' + Math.min(k.lap+1, LAPS) + (k.bestLap ? ' · ' + fmt(k.bestLap) : '') +
+                (k.offroad ? ' 🌿' : ''));
+        }).join('<br>') || 'no racers';
       } else {
-        hud.innerHTML = (conn ? 'driver connected' : 'waiting for driver…') +
-          '<br>' + Math.round(Math.abs(v) * 2.4) + ' mph' +
+        var joined = karts.filter(function(k){ return k.conn || k.auto || k.slot === 0; });
+        hud.innerHTML = (joined.length ? joined.map(function(k){
+            return '<span style="color:' + cssColor(k.color) + '">●</span> ' + k.name + ' ' + (k.charEmoji||'');
+          }).join('<br>') : 'waiting for drivers…') +
           (trackRecord ? '<br>🏆 track record: ' + fmt(trackRecord) : '');
       }
 
-      // minimap (skip when tab is hidden, same as the 3D render)
       if (!document.hidden){
         mmCtx.clearRect(0, 0, 180, 180);
         mmCtx.strokeStyle = '#8b93a3'; mmCtx.lineWidth = 7; mmCtx.lineCap = 'round';
@@ -841,11 +884,14 @@
         }
         mmCtx.stroke();
         var sp0 = mmPt(pts[0]);
-        mmCtx.fillStyle = '#FFC93C';
-        mmCtx.beginPath(); mmCtx.arc(sp0[0], sp0[1], 4, 0, 7); mmCtx.fill();
-        var kp = mmPt(pos);
-        mmCtx.fillStyle = '#FF5A5F'; mmCtx.strokeStyle = '#10233F'; mmCtx.lineWidth = 2;
-        mmCtx.beginPath(); mmCtx.arc(kp[0], kp[1], 6, 0, 7); mmCtx.fill(); mmCtx.stroke();
+        mmCtx.fillStyle = '#10233F';
+        mmCtx.beginPath(); mmCtx.arc(sp0[0], sp0[1], 3.5, 0, 7); mmCtx.fill();
+        karts.forEach(function(k){
+          var kp = mmPt(k.pos);
+          mmCtx.fillStyle = cssColor(k.color);
+          mmCtx.strokeStyle = '#10233F'; mmCtx.lineWidth = 2;
+          mmCtx.beginPath(); mmCtx.arc(kp[0], kp[1], 5.5, 0, 7); mmCtx.fill(); mmCtx.stroke();
+        });
         renderer.render(scene, camera);
       }
     }
@@ -875,7 +921,7 @@
       conn = peer.connect('gokart-'+code, { reliable:true });
       conn.on('open', function(){
         connected = true;
-        status.textContent = 'Connected — you are the wheel ✔';
+        status.textContent = 'Connected — you are a wheel ✔';
         btnMotion.style.display = 'block';
       });
       conn.on('data', function(msg){
@@ -884,7 +930,7 @@
           if (navigator.vibrate) navigator.vibrate(80);
         }
         if (msg && msg.t === 'buzz'){
-          if (navigator.vibrate) navigator.vibrate([90, 40, 90]); // grass rumble
+          if (navigator.vibrate) navigator.vibrate([90, 40, 90]);
         }
       });
       conn.on('close', function(){ status.textContent = 'Disconnected — refresh both devices.'; connected = false; });
@@ -893,15 +939,11 @@
       status.textContent = 'Could not connect (' + e.type + '). Check the code and refresh.';
     });
 
-    var trim = 0; // optional fine-tune from the CENTER button
+    var trim = 0;
     var gNow = { x:0, y:-9.8 };
     var gas = false, brake = false;
-    var baseCard = null; // latched neutral grip orientation
+    var baseCard = null;
     function rawWheel(){
-      // wheel angle = deviation from your LATCHED grip orientation.
-      // The grip auto-detects on pickup (portrait or either landscape) and only
-      // re-latches when you clearly re-hold the phone near a new orientation —
-      // so steering hard past 45° mid-corner can never flip on you.
       var a = Math.atan2(gNow.x, -gNow.y);
       var HALF = Math.PI / 2;
       var nearest = Math.round(a / HALF) * HALF;
@@ -910,7 +952,7 @@
       while (dev > Math.PI) dev -= Math.PI * 2;
       while (dev < -Math.PI) dev += Math.PI * 2;
       if (nearest !== baseCard && Math.abs(a - nearest) < .3 && Math.abs(dev) > Math.PI / 3){
-        baseCard = nearest; // deliberate re-grip in a new orientation
+        baseCard = nearest;
         dev = a - baseCard;
         while (dev > Math.PI) dev -= Math.PI * 2;
         while (dev < -Math.PI) dev += Math.PI * 2;
@@ -930,7 +972,7 @@
           btnCal.style.display = 'block';
           btnArm.style.display = 'block';
           pedals.style.display = 'flex';
-          status.textContent = 'Wheel live ✔ — hold sideways, tap CENTER';
+          status.textContent = 'Wheel live ✔ — hold sideways and drive';
         } else {
           status.textContent = 'Motion permission denied — enable in Settings > Safari.';
         }
