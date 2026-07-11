@@ -127,10 +127,14 @@
       <button class="castBtn" data-char="sticky" style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;padding:8px 4px;border:3px solid #10233F;border-radius:10px;background:#fff;color:#10233F">📝 Sticky</button>
       <button class="castBtn" data-char="glue" style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;padding:8px 4px;border:3px solid #10233F;border-radius:10px;background:#fff;color:#10233F">🧴 Glue Stick</button>
     </div>
-    <div style="font-size:11px;font-weight:700;color:#8895a7;margin-top:10px;">click the Go Kart logo to close</div>
+    <div style="font-size:12px;font-weight:800;margin-top:8px;"><a href="https://gogaminginc.github.io/gogolf/" style="color:#2FBF71;text-decoration:none;">⛳ Play GOGOLF →</a></div>
+    <div style="font-size:11px;font-weight:700;color:#8895a7;margin-top:8px;">click the Go Kart logo to close</div>
   </div>
   <div id="bigMsg"></div>
   <div id="stateMsg">Waiting for driver</div>
+  <canvas id="minimap" width="180" height="180" style="position:fixed;left:18px;bottom:18px;z-index:5;
+    background:rgba(255,255,255,.92);border:3px solid #10233F;border-radius:16px;
+    box-shadow:0 5px 0 rgba(16,35,63,.22)"></canvas>
 </div>
 
 <!-- PHONE -->
@@ -594,6 +598,22 @@
     var countStart = 0, lastCountBeep = -1;
     var raceStart = 0, lapStart = 0, lap = 0, LAPS = 3;
     var lapTimes = [], bestLap = null, halfFlag = false;
+    var wrongWay = false, wasOffroad = false, nextSkid = 0;
+    var trackRecord = null;
+    try { trackRecord = +localStorage.getItem('gokart_best') || null; } catch(e){}
+    // minimap setup
+    var mmCtx = document.getElementById('minimap').getContext('2d');
+    var mmB = (function(){
+      var minX=1e9,maxX=-1e9,minZ=1e9,maxZ=-1e9;
+      pts.forEach(function(p){
+        minX=Math.min(minX,p.x); maxX=Math.max(maxX,p.x);
+        minZ=Math.min(minZ,p.z); maxZ=Math.max(maxZ,p.z);
+      });
+      var s = 148 / Math.max(maxX-minX, maxZ-minZ);
+      return { minX:minX, minZ:minZ, s:s,
+        ox: (180-(maxX-minX)*s)/2, oy: (180-(maxZ-minZ)*s)/2 };
+    })();
+    function mmPt(p){ return [(p.x-mmB.minX)*mmB.s+mmB.ox, (p.z-mmB.minZ)*mmB.s+mmB.oy]; }
     addEventListener('keydown', function(e){
       if (e.key==='ArrowLeft') kb.l = true;
       if (e.key==='ArrowRight') kb.r = true;
@@ -648,6 +668,10 @@
       var prev = curIdx;
       curIdx = best;
       offroad = bestD > (HALF_W + .4) * (HALF_W + .4);
+      if (offroad && !wasOffroad && conn) conn.send({ t:'buzz' }); // rumble the wheel
+      wasOffroad = offroad;
+      var tanDot = Math.sin(heading)*tans[curIdx].x - Math.cos(heading)*tans[curIdx].z;
+      wrongWay = (v > 3 && tanDot < -.3);
       if (curIdx > N*.5) halfFlag = true;
       if (race === 'racing' && halfFlag && prev > N*.85 && curIdx < N*.15){
         var now = performance.now();
@@ -660,7 +684,13 @@
         if (lap >= LAPS){
           race = 'done';
           var total = now - raceStart;
-          bigMsg.innerHTML = '🏁 FINISH!<br><span style="font-size:34px">total ' + fmt(total) +
+          var newRec = !trackRecord || bestLap < trackRecord;
+          if (newRec){
+            trackRecord = bestLap;
+            try { localStorage.setItem('gokart_best', Math.round(bestLap)); } catch(e){}
+          }
+          bigMsg.innerHTML = '🏁 FINISH!' + (newRec ? '<br><span style="font-size:38px;color:#FFC93C">🏆 NEW TRACK RECORD!</span>' : '') +
+            '<br><span style="font-size:34px">total ' + fmt(total) +
             ' · best lap ' + fmt(bestLap) + '</span><br><span style="font-size:22px">tap START RACE to go again</span>';
           bigMsg.style.display = 'block';
           beep(880,.4,'triangle',.25); setTimeout(function(){ beep(1170,.5,'triangle',.25); }, 180);
@@ -701,12 +731,17 @@
       if (race === 'count'){
         var ct = now - countStart;
         var n3 = 3 - Math.floor(ct/1000);
-        if (n3 !== lastCountBeep && n3 > 0){ lastCountBeep = n3; beep(440,.18,'square',.2); }
+        if (n3 !== lastCountBeep && n3 > 0){
+          lastCountBeep = n3;
+          beep(440,.18,'square',.2);
+          if (conn) conn.send({ t:'result', line: n3 + '…' });
+        }
         if (ct < 3000){ bigMsg.textContent = n3; }
         else {
           race = 'racing'; raceStart = now; lapStart = now;
           bigMsg.textContent = 'GO!';
           beep(880,.35,'square',.25);
+          if (conn) conn.send({ t:'result', line: '🏁 GO!' });
           setTimeout(function(){ if (race==='racing') bigMsg.style.display='none'; }, 900);
           stateMsg.textContent = 'Lap 1 of ' + LAPS + ' — send it!';
         }
@@ -747,6 +782,14 @@
       frontWheels.forEach(function(h){ h.rotation.y = -steerN * .5; });
       wheels.forEach(function(w){ w.rotation.x += v * dt / .38; });
       driverSeat.position.y = .55 + Math.sin(now*.02) * .012 * Math.min(1, Math.abs(v)/5); // engine judder
+      driverSeat.rotation.z = steerN * .17 * Math.min(1, Math.abs(v)/10); // lean into corners
+      camera.fov = 62 + Math.min(14, Math.abs(v) * .45); // speed rush
+      camera.updateProjectionMatrix();
+      // tire chirp on hard cornering
+      if (race === 'racing' && Math.abs(steerN) > .75 && Math.abs(v) > 15 && now > nextSkid){
+        nextSkid = now + 300;
+        beep(95, .16, 'sawtooth', .07);
+      }
 
       // chase camera
       var back = new THREE.Vector3(Math.sin(heading), 0, -Math.cos(heading));
@@ -777,13 +820,31 @@
         hud.innerHTML = 'LAP ' + Math.min(lap+1, LAPS) + '/' + LAPS +
           '<br>time: ' + fmt(now - lapStart) +
           '<br>' + (bestLap ? 'best: ' + fmt(bestLap) : '&nbsp;') +
-          '<br>' + Math.round(Math.abs(v) * 2.4) + ' mph' + (offroad ? ' · 🌿 GRASS!' : '');
+          '<br>' + Math.round(Math.abs(v) * 2.4) + ' mph' + (offroad ? ' · 🌿 GRASS!' : '') +
+          (wrongWay ? '<br><span style="color:#FF5A5F">⛔ WRONG WAY!</span>' : '');
       } else if (race === 'done'){
         // keep final HUD
       } else {
         hud.innerHTML = (conn ? 'driver connected' : 'waiting for driver…') +
-          '<br>' + Math.round(Math.abs(v) * 2.4) + ' mph';
+          '<br>' + Math.round(Math.abs(v) * 2.4) + ' mph' +
+          (trackRecord ? '<br>🏆 track record: ' + fmt(trackRecord) : '');
       }
+
+      // minimap
+      mmCtx.clearRect(0, 0, 180, 180);
+      mmCtx.strokeStyle = '#8b93a3'; mmCtx.lineWidth = 7; mmCtx.lineCap = 'round';
+      mmCtx.beginPath();
+      for (var mi = 0; mi <= N; mi += 2){
+        var mp = mmPt(pts[mi % N]);
+        if (mi === 0) mmCtx.moveTo(mp[0], mp[1]); else mmCtx.lineTo(mp[0], mp[1]);
+      }
+      mmCtx.stroke();
+      var sp0 = mmPt(pts[0]);
+      mmCtx.fillStyle = '#FFC93C';
+      mmCtx.beginPath(); mmCtx.arc(sp0[0], sp0[1], 4, 0, 7); mmCtx.fill();
+      var kp = mmPt(pos);
+      mmCtx.fillStyle = '#FF5A5F'; mmCtx.strokeStyle = '#10233F'; mmCtx.lineWidth = 2;
+      mmCtx.beginPath(); mmCtx.arc(kp[0], kp[1], 6, 0, 7); mmCtx.fill(); mmCtx.stroke();
 
       if (!document.hidden) renderer.render(scene, camera);
     }
@@ -820,6 +881,9 @@
         if (msg && msg.t === 'result'){
           result.textContent = msg.line;
           if (navigator.vibrate) navigator.vibrate(80);
+        }
+        if (msg && msg.t === 'buzz'){
+          if (navigator.vibrate) navigator.vibrate([90, 40, 90]); // grass rumble
         }
       });
       conn.on('close', function(){ status.textContent = 'Disconnected — refresh both devices.'; connected = false; });
