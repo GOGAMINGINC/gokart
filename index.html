@@ -701,7 +701,7 @@
         try { k.conn.send({ t:'buzz' }); } catch(e){}
       }
       k.wasOff = k.offroad;
-      if (k.curIdx > N*.5) k.halfFlag = true;
+      if (k.curIdx > N*.4 && k.curIdx < N*.6) k.halfFlag = true; // must genuinely reach mid-track
       if (race === 'racing' && !k.finished && k.halfFlag && prev > N*.85 && k.curIdx < N*.15){
         var lt = now - k.lapStart;
         k.lapTimes.push(lt);
