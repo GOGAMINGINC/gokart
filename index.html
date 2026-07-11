@@ -342,7 +342,7 @@
       g.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
       g.setIndex(idxs);
       g.computeVertexNormals();
-      var road = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color:0x555d6b }));
+      var road = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color:0x555d6b, side:THREE.DoubleSide }));
       road.receiveShadow = true;
       scene.add(road);
       // solid white edge lines — it's a proper road now
@@ -362,7 +362,7 @@
         var g3 = new THREE.BufferGeometry();
         g3.setAttribute('position', new THREE.Float32BufferAttribute(vs,3));
         g3.setIndex(is2);
-        scene.add(new THREE.Mesh(g3, new THREE.MeshBasicMaterial({ color: color })));
+        scene.add(new THREE.Mesh(g3, new THREE.MeshBasicMaterial({ color: color, side:THREE.DoubleSide })));
       }
       ribbon(HALF_W - .35, .25, 0xffffff, .035);
       ribbon(-(HALF_W - .35), .25, 0xffffff, .035);
@@ -893,15 +893,19 @@
       status.textContent = 'Could not connect (' + e.type + '). Check the code and refresh.';
     });
 
-    var g0 = null;          // calibration gravity vector (x,y)
+    var trim = 0; // optional fine-tune from the CENTER button
     var gNow = { x:0, y:-9.8 };
     var gas = false, brake = false;
-    function steerDeg(){
-      if (!g0) return 0;
-      var cross = g0.x * gNow.y - g0.y * gNow.x;
-      var dot = g0.x * gNow.x + g0.y * gNow.y;
-      return Math.atan2(cross, dot) * 180 / Math.PI;
+    function rawWheel(){
+      // wheel angle = how far gravity has rotated from the NEAREST neutral grip.
+      // Snapping to the nearest 90° means portrait and both landscape holds all
+      // read as "wheel straight" — no calibration needed, no full-lock spins.
+      var a = Math.atan2(gNow.x, -gNow.y);
+      var HALF = Math.PI / 2;
+      var nearest = Math.round(a / HALF) * HALF;
+      return (a - nearest) * 180 / Math.PI;
     }
+    function steerDeg(){ return rawWheel() - trim; }
     btnMotion.addEventListener('click', function(){
       var asks = [];
       if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function')
@@ -921,12 +925,11 @@
       }).catch(function(){ status.textContent = 'Motion needs HTTPS — reload the page.'; });
     });
     btnCal.addEventListener('click', function(){
-      g0 = { x: gNow.x, y: gNow.y };
+      trim = rawWheel();
       btnCal.textContent = '🎯 CENTERED — TAP AGAIN ANYTIME';
       if (navigator.vibrate) navigator.vibrate(40);
     });
     btnArm.addEventListener('click', function(){
-      if (!g0) g0 = { x: gNow.x, y: gNow.y };
       if (conn && connected) conn.send({ t:'arm' });
       result.textContent = '';
     });
@@ -954,7 +957,7 @@
           lastSend = now;
           var s = Math.max(-60, Math.min(60, steerDeg()));
           conn.send({ t:'ctl', s: s, g: gas, b: brake });
-          steerDial.textContent = g0 ? (s > 3 ? '⟶ ' : s < -3 ? '⟵ ' : '· ') + Math.abs(Math.round(s)) + '°' : '';
+          steerDial.textContent = (s > 3 ? '⟶ ' : s < -3 ? '⟵ ' : '· ') + Math.abs(Math.round(s)) + '°';
         }
       });
     }
