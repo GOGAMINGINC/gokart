@@ -720,7 +720,14 @@
           maybeEndRace(now);
         } else {
           beep(660,.18,'triangle',.18);
-          if (k.conn){ try { k.conn.send({ t:'result', line: 'Lap ' + k.lap + ': ' + fmt(lt) }); } catch(e){} }
+          if (k.lap === LAPS - 1){ // the bell lap
+            bigMsg.textContent = '🔔 FINAL LAP!';
+            bigMsg.style.display = 'block';
+            setTimeout(function(){ if (race === 'racing') bigMsg.style.display = 'none'; }, 1300);
+            beep(990,.25,'triangle',.2);
+          }
+          if (k.conn){ try { k.conn.send({ t:'result', line: 'Lap ' + k.lap + ': ' + fmt(lt) +
+            (k.lap === LAPS - 1 ? ' · FINAL LAP!' : '') }); } catch(e){} }
         }
       }
     }
