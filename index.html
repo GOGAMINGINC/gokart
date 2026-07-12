@@ -109,6 +109,10 @@
     <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:12px;letter-spacing:.16em;color:rgba(255,255,255,.85)">ROOM CODE</div>
     <div id="joinCode">····</div>
     <div class="hint" id="hostNetStatus">Starting connection service…</div>
+    <div id="lobbyGrid" style="display:none;flex-direction:column;gap:8px;min-width:320px;"></div>
+    <button id="startEngines" style="display:none;font-family:'Fredoka',sans-serif;font-size:22px;font-weight:700;
+      padding:16px 40px;border:3px solid #10233F;border-radius:100px;background:#FF5A5F;color:#fff;
+      box-shadow:0 6px 0 #c9353a;cursor:pointer">🏁 START ENGINES</button>
   </div>
   <div id="hud">waiting for drivers…</div>
   <div id="settingsPanel" style="display:none;position:fixed;top:60px;left:18px;z-index:30;
@@ -151,6 +155,17 @@
     <div class="pedal" id="brakeBtn">🛑 BRAKE</div>
     <div class="pedal" id="gasBtn">🏁 GAS</div>
   </div>
+  <div id="charRow" style="display:none;gap:6px;flex-wrap:wrap;justify-content:center;max-width:360px;">
+    <button class="charBtn" data-char="pencil" style="font-size:24px;padding:8px 12px;border:3px solid #10233F;border-radius:12px;background:#fff">✏️</button>
+    <button class="charBtn" data-char="fork" style="font-size:24px;padding:8px 12px;border:3px solid #10233F;border-radius:12px;background:#fff">🍴</button>
+    <button class="charBtn" data-char="crayon" style="font-size:24px;padding:8px 12px;border:3px solid #10233F;border-radius:12px;background:#fff">🖍️</button>
+    <button class="charBtn" data-char="highlighter" style="font-size:24px;padding:8px 12px;border:3px solid #10233F;border-radius:12px;background:#fff">🖊️</button>
+    <button class="charBtn" data-char="mug" style="font-size:24px;padding:8px 12px;border:3px solid #10233F;border-radius:12px;background:#fff">☕</button>
+    <button class="charBtn" data-char="eraser" style="font-size:24px;padding:8px 12px;border:3px solid #10233F;border-radius:12px;background:#fff">🩹</button>
+    <button class="charBtn" data-char="sticky" style="font-size:24px;padding:8px 12px;border:3px solid #10233F;border-radius:12px;background:#fff">📝</button>
+    <button class="charBtn" data-char="glue" style="font-size:24px;padding:8px 12px;border:3px solid #10233F;border-radius:12px;background:#fff">🧴</button>
+  </div>
+  <button class="bigbtn" id="btnBoost" style="display:none;background:#FFC93C;color:#10233F;box-shadow:0 6px 0 #e0a916" disabled>⚡ BOOST 0%</button>
   <button class="bigbtn" id="btnArm" style="display:none">🚦 START RACE</button>
   <div id="phoneResult" style="font-family:'Fredoka',sans-serif;font-size:32px;font-weight:700;color:#fff;min-height:40px;text-shadow:0 3px 0 #10233F"></div>
   <div class="warn">🏎️ GOGAMES is not responsible for imaginary whiplash.</div>
@@ -509,6 +524,17 @@
       for (var i=0;i<CAST.length;i++) if (CAST[i].id === id) return CAST[i];
       return CAST[0];
     }
+    // per-racer stats: speed / handling / boost — subtle but real
+    var STATS = {
+      pencil:      { sp:1.06, hd:.95,  bo:1   },
+      fork:        { sp:1,    hd:1,    bo:1   },
+      crayon:      { sp:.97,  hd:1.08, bo:1   },
+      highlighter: { sp:1.08, hd:.92,  bo:1   },
+      mug:         { sp:.96,  hd:1,    bo:1.3 },
+      eraser:      { sp:.94,  hd:1.1,  bo:1   },
+      sticky:      { sp:.98,  hd:1.12, bo:.9  },
+      glue:        { sp:1,    hd:.95,  bo:1.2 }
+    };
 
     /* ---------- multiplayer karts ---------- */
     var KART_COLORS = [0xFF5A5F, 0xFFC93C, 0x2FBF71, 0x8a53d6];
@@ -544,6 +570,7 @@
       var def = castById(charId);
       k.mesh.seat.add(def.build());
       k.charEmoji = def.emoji; k.charName = def.name;
+      k.stats = STATS[def.id] || STATS.fork;
     }
     function addKart(c){
       var slot = karts.length;
@@ -556,7 +583,8 @@
         v: 0, steerSmooth: 0, ctl: { s:0, g:false, b:false },
         curIdx: 0, offroad: false, wasOff: false,
         lap: 0, lapStart: 0, lapTimes: [], bestLap: null, halfFlag: false,
-        finished: false, finishTime: null, auto: false, nextSkid: 0
+        finished: false, finishTime: null, auto: false, nextSkid: 0,
+        boost: 0, boostUntil: 0
       };
       swapDriver(k, slot === 0 ? p1Char : CAST[(slot * 2 + 1) % CAST.length].id);
       gridPlace(k, slot);
@@ -581,12 +609,12 @@
         }
         if (k) k.conn = c; else k = addKart(c);
         if (!k){ c.send({ t:'result', line: 'Race is full — 4 max!' }); return; }
-        document.getElementById('connectPanel').style.display = 'none';
         var count = karts.filter(function(x){ return x.conn || x.auto; }).length;
-        stateMsg.textContent = k.name + ' joined as ' + k.charName + '! ' + count + ' racer' + (count>1?'s':'') + ' — any phone taps START RACE';
-        c.send({ t:'result', line: 'You are ' + k.name + ' ' + k.charEmoji });
+        stateMsg.textContent = k.name + ' joined as ' + k.charName + '! Pick your racer on your phone, then START';
+        c.send({ t:'result', line: 'You are ' + k.name + ' ' + k.charEmoji + ' — pick your racer!' });
+        updateLobby();
         c.on('data', function(msg){ onData(msg, k); });
-        c.on('close', function(){ k.conn = null; stateMsg.textContent = k.name + ' disconnected'; });
+        c.on('close', function(){ k.conn = null; stateMsg.textContent = k.name + ' disconnected'; updateLobby(); });
       });
     });
 
@@ -615,15 +643,46 @@
       var s = ms/1000;
       return Math.floor(s/60) + ':' + ('0' + (s % 60).toFixed(2)).slice(-5);
     }
+    function updateLobby(){
+      var grid = document.getElementById('lobbyGrid');
+      var btn = document.getElementById('startEngines');
+      var joined = karts.filter(function(x){ return x.conn || x.auto; });
+      if (!joined.length){ grid.style.display = 'none'; btn.style.display = 'none'; return; }
+      grid.style.display = 'flex';
+      btn.style.display = 'block';
+      grid.innerHTML = '<div style="font-family:\'Fredoka\',sans-serif;font-weight:700;font-size:20px;text-shadow:0 2px 0 rgba(16,35,63,.3)">Starting grid · ' + joined.length + '/4</div>' +
+        joined.map(function(k, i){
+          return '<div style="display:flex;align-items:center;gap:10px;background:#fff;color:#10233F;' +
+            'border:3px solid #10233F;border-left:8px solid ' + cssColor(k.color) + ';border-radius:12px;' +
+            'padding:8px 14px;box-shadow:0 4px 0 rgba(16,35,63,.25);font-weight:900;">' +
+            '<span style="font-family:\'Fredoka\',sans-serif;font-size:18px">' + (i+1) + '</span>' +
+            '<span style="font-size:20px">' + (k.charEmoji||'') + '</span>' +
+            '<span>' + k.name + ' · ' + (k.charName||'') + '</span>' +
+            '<span style="margin-left:auto;color:#2FBF71;font-size:12px;letter-spacing:.1em">READY</span></div>';
+        }).join('');
+    }
     function startRace(){
       karts.forEach(function(k, i){
         gridPlace(k, i);
         k.lap = 0; k.lapTimes = []; k.bestLap = null;
         k.finished = false; k.finishTime = null;
+        k.boost = 0; k.boostUntil = 0;
       });
+      document.getElementById('connectPanel').style.display = 'none';
       race = 'count'; countStart = performance.now(); lastCountBeep = -1;
       bigMsg.style.display = 'block';
       stateMsg.textContent = 'Get ready…';
+    }
+    document.getElementById('startEngines').addEventListener('click', function(){
+      if (karts.length && race !== 'count') startRace();
+    });
+    function tryBoost(k){
+      if (race === 'racing' && !k.finished && k.boost >= 1 && performance.now() > k.boostUntil){
+        k.boostUntil = performance.now() + 2500 * (k.stats ? k.stats.bo : 1);
+        k.boost = 0;
+        beep(520,.3,'square',.2);
+        if (k.conn){ try { k.conn.send({ t:'result', line: '⚡ BOOST!' }); } catch(e){} }
+      }
     }
     function onData(msg, k){
       if (!msg || !msg.t || !k) return;
@@ -633,7 +692,21 @@
         k.ctl.b = !!msg.b;
       }
       else if (msg.t === 'arm'){ if (race !== 'count') startRace(); }
+      else if (msg.t === 'char'){
+        swapDriver(k, msg.id);
+        if (k.conn){ try { k.conn.send({ t:'result', line: 'You are ' + k.charEmoji + ' ' + k.charName }); } catch(e){} }
+        updateLobby();
+      }
+      else if (msg.t === 'boost'){ tryBoost(k); }
     }
+    // 1Hz boost meter sync to phones
+    setInterval(function(){
+      karts.forEach(function(k){
+        if (k.conn && k.conn.open){
+          try { k.conn.send({ t:'bst', v: Math.round(k.boost * 100), on: performance.now() < k.boostUntil }); } catch(e){}
+        }
+      });
+    }, 1000);
     window._gk = {
       state: function(){ return { race: race, karts: karts.map(function(k){
         return { name: k.name, lap: k.lap, v: +k.v.toFixed(1), idx: k.curIdx,
@@ -782,6 +855,7 @@
         k.ctl.s = Math.max(-50, Math.min(50, dh * 90));
         k.ctl.g = Math.abs(dh) < .9;
         k.ctl.b = false;
+        if (k.boost >= 1 && Math.abs(dh) < .2) tryBoost(k); // bots boost on straights
       }
       var gas = k.ctl.g || (k.slot === 0 && kb.u);
       var brake = k.ctl.b || (k.slot === 0 && kb.d);
@@ -789,13 +863,18 @@
       var steerIn = k.ctl.s + (k.slot === 0 ? (kb.l ? -32 : 0) + (kb.r ? 32 : 0) : 0);
       k.steerSmooth += (steerIn - k.steerSmooth) * Math.min(1, dt*10);
       var steerN = Math.max(-1, Math.min(1, k.steerSmooth / 38));
-      var maxV = k.offroad ? 10 : 30;
-      if (gas) k.v += 13 * dt;
+      var st = k.stats || { sp:1, hd:1, bo:1 };
+      var boosting = now < k.boostUntil;
+      if (race === 'racing' && !k.finished && !k.offroad && !boosting){
+        k.boost = Math.min(1, k.boost + dt * .08); // ~12s to charge
+      }
+      var maxV = k.offroad ? 10 : 30 * st.sp * (boosting ? 1.35 : 1);
+      if (gas) k.v += (boosting ? 24 : 13) * dt;
       if (brake) k.v -= 24 * dt;
       k.v -= k.v * (k.offroad ? 1.7 : .45) * dt;
       k.v = Math.max(-6, Math.min(maxV, k.v));
       if (Math.abs(k.v) > .3){
-        k.heading += steerN * 2.0 * dt * Math.min(1, Math.abs(k.v)/7) * (k.v < 0 ? -1 : 1);
+        k.heading += steerN * 2.0 * st.hd * dt * Math.min(1, Math.abs(k.v)/7) * (k.v < 0 ? -1 : 1);
       }
       k.pos.x += Math.sin(k.heading) * k.v * dt;
       k.pos.z += -Math.cos(k.heading) * k.v * dt;
@@ -871,7 +950,7 @@
           return '<span style="color:' + cssColor(k.color) + '">●</span> ' + k.name + ' ' + (k.charEmoji||'') +
             (k.finished ? ' 🏁 ' + fmt(k.finishTime)
               : ' · L' + Math.min(k.lap+1, LAPS) + (k.bestLap ? ' · ' + fmt(k.bestLap) : '') +
-                (k.offroad ? ' 🌿' : ''));
+                (now < k.boostUntil ? ' ⚡' : '') + (k.offroad ? ' 🌿' : ''));
         }).join('<br>') || 'no racers';
       } else {
         var joined = karts.filter(function(k){ return k.conn || k.auto || k.slot === 0; });
@@ -939,6 +1018,12 @@
         if (msg && msg.t === 'buzz'){
           if (navigator.vibrate) navigator.vibrate([90, 40, 90]);
         }
+        if (msg && msg.t === 'bst'){
+          var bb = document.getElementById('btnBoost');
+          if (msg.on){ bb.textContent = '⚡ BOOSTING!'; bb.disabled = true; }
+          else if (msg.v >= 100){ bb.textContent = '⚡ BOOST READY — TAP!'; bb.disabled = false; }
+          else { bb.textContent = '⚡ BOOST ' + msg.v + '%'; bb.disabled = true; }
+        }
       });
       conn.on('close', function(){ status.textContent = 'Disconnected — refresh both devices.'; connected = false; });
     });
@@ -979,7 +1064,9 @@
           btnCal.style.display = 'block';
           btnArm.style.display = 'block';
           pedals.style.display = 'flex';
-          status.textContent = 'Wheel live ✔ — hold sideways and drive';
+          document.getElementById('charRow').style.display = 'flex';
+          document.getElementById('btnBoost').style.display = 'block';
+          status.textContent = 'Wheel live ✔ — pick your racer, then drive';
         } else {
           status.textContent = 'Motion permission denied — enable in Settings > Safari.';
         }
@@ -993,6 +1080,19 @@
     btnArm.addEventListener('click', function(){
       if (conn && connected) conn.send({ t:'arm' });
       result.textContent = '';
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.charBtn'), function(b){
+      b.addEventListener('click', function(){
+        if (conn && connected) conn.send({ t:'char', id: b.getAttribute('data-char') });
+        Array.prototype.forEach.call(document.querySelectorAll('.charBtn'), function(x){
+          x.style.background = (x === b) ? '#FFC93C' : '#fff';
+        });
+        if (navigator.vibrate) navigator.vibrate(30);
+      });
+    });
+    document.getElementById('btnBoost').addEventListener('click', function(){
+      if (conn && connected) conn.send({ t:'boost' });
+      if (navigator.vibrate) navigator.vibrate(60);
     });
     function pedal(el, setter){
       function on(e){ e.preventDefault(); setter(true); el.classList.add('on'); }
