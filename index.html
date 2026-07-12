@@ -88,6 +88,38 @@
   #brakeBtn { background:#10233F; box-shadow:0 7px 0 #000; }
   .pedal.on { transform:translateY(4px); box-shadow:0 3px 0 rgba(0,0,0,.4) !important; }
   .warn { color:rgba(255,255,255,.45); font-weight:700; font-size:14px; max-width:340px; line-height:1.5; }
+  /* ---------- in-race HUD (design: 2 - In-Race HUD) ---------- */
+  #hud { display:none; }
+  #raceHud { display:none; }
+  #posCard { position:fixed; top:16px; left:18px; z-index:16; display:flex; gap:10px; }
+  .hcard { font-family:'Fredoka',sans-serif; border:3px solid #10233F; border-radius:16px;
+           box-shadow:0 5px 0 rgba(0,0,0,.32); padding:7px 15px; text-align:center; line-height:1; }
+  .hcard .lab { font-family:'Nunito',sans-serif; font-weight:900; font-size:10px; letter-spacing:.14em; opacity:.85; margin-bottom:3px; }
+  .hcard .big { font-weight:700; font-size:30px; }
+  .hcard.pos { background:#10233F; color:#fff; }
+  .hcard.pos .big span { font-size:15px; color:#FFC93C; }
+  .hcard.lap { background:#fff; color:#10233F; }
+  #timePill { position:fixed; top:16px; right:18px; z-index:16; background:#FFC93C; color:#10233F;
+              border:3px solid #10233F; border-radius:100px; box-shadow:0 5px 0 #e0a916;
+              padding:9px 18px; font-family:'Fredoka',sans-serif; font-weight:700; font-size:20px;
+              display:flex; gap:10px; align-items:center; }
+  #timePill .lab { font-family:'Nunito',sans-serif; font-weight:900; font-size:11px; letter-spacing:.14em; }
+  #standings { position:fixed; top:74px; right:18px; z-index:16; width:224px;
+               background:rgba(16,35,63,.9); border:3px solid #000; border-radius:16px;
+               box-shadow:0 6px 0 rgba(0,0,0,.35); padding:6px; color:#fff; }
+  #standings .row { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:10px; font-weight:800; font-size:14px; }
+  #standings .row .rk { width:15px; color:#9aa3b2; font-weight:900; text-align:center; }
+  #standings .row .dot { width:12px; height:12px; border-radius:50%; border:2px solid rgba(0,0,0,.4); }
+  #standings .row .nm { flex:1; letter-spacing:.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #standings .row .gp { color:#9fb0c2; font-size:12px; font-weight:800; }
+  #standings .row.me { background:rgba(255,201,60,.18); }
+  #boostBar { position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:16; width:300px; text-align:center; }
+  #boostBar .track { height:20px; border:3px solid #10233F; border-radius:100px; background:#0b1830; overflow:hidden; box-shadow:0 4px 0 rgba(0,0,0,.32); }
+  #boostBar .fill { height:100%; width:0%; background:repeating-linear-gradient(115deg,#FFC93C 0 12px,#ffd766 12px 24px); }
+  #boostBar .lab { margin-top:7px; font-family:'Nunito',sans-serif; font-weight:900; font-size:12px; letter-spacing:.12em; color:#fff; text-shadow:0 2px 0 rgba(0,0,0,.45); }
+  #mmWrap { position:fixed; left:18px; bottom:18px; z-index:5; background:#10233F; border:3px solid #000;
+            border-radius:16px; box-shadow:0 6px 0 rgba(0,0,0,.35); padding:7px 8px 8px; }
+  #mmWrap .lab { font-family:'Nunito',sans-serif; font-weight:900; font-size:10px; letter-spacing:.16em; color:#9aa3b2; margin:1px 2px 5px; }
   /* landscape racing grip: brake under left thumb, gas under right */
   @media (orientation: landscape){
     #phoneUI { gap:8px; padding:10px; }
@@ -100,6 +132,32 @@
     #gasBtn { right:12px; }
     .warn { display:none; }
   }
+  /* ---------- Pick Your Racer (design: 4 - Pick Your Racer) ---------- */
+  #racerSelect { display:none; position:fixed; inset:0; z-index:60; flex-direction:column;
+    background:radial-gradient(ellipse at 50% -10%, #3a3f4a 0%, #2a2e37 46%, #1c1f26 100%); color:#fff; }
+  #racerSelect .strip { height:16px; flex:none; background:conic-gradient(#10233F 90deg,#f2f4f7 0 180deg,#10233F 0 270deg,#f2f4f7 0) 0 0 / 16px 16px; }
+  #racerSelect .eyebrow { text-align:center; margin-top:20px; }
+  #racerSelect .eyebrow span { background:#FF5A5F; color:#fff; font-weight:900; font-size:12px; letter-spacing:.12em;
+    padding:8px 16px; border-radius:100px; border:3px solid #10233F; box-shadow:0 4px 0 rgba(0,0,0,.3); }
+  #racerSelect h1 { text-align:center; font-family:'Fredoka',sans-serif; font-weight:700; font-size:42px; margin-top:14px; text-shadow:0 3px 0 rgba(0,0,0,.4); }
+  #racerStage { flex:1; display:flex; align-items:center; justify-content:center; gap:34px; flex-wrap:wrap; padding:6px 30px; }
+  #racerCanvas { width:440px; height:320px; max-width:52vw; }
+  #racerCard { width:300px; background:#fff; color:#10233F; border:4px solid #10233F; border-radius:22px; box-shadow:0 12px 0 rgba(0,0,0,.4); padding:22px 24px; }
+  #racerCard h2 { font-family:'Fredoka',sans-serif; font-weight:700; font-size:27px; }
+  #racerCard .tag { font-weight:800; color:#8895a7; font-size:14px; margin-bottom:14px; }
+  .statRow { margin-top:12px; }
+  .statRow .lab { font-weight:900; font-size:11px; letter-spacing:.1em; color:#8895a7; margin-bottom:5px; }
+  .statRow .bar { height:14px; border-radius:100px; background:#e7ecf1; border:2px solid #10233F; overflow:hidden; }
+  .statRow .barfill { height:100%; border-radius:100px; transition:width .2s ease; }
+  #racerRail { flex:none; background:#171a20; border-top:3px solid #000; padding:14px 26px; display:flex; align-items:center; gap:16px; }
+  #racerRail .cnt { font-weight:900; font-size:12px; letter-spacing:.1em; color:#9aa3b2; line-height:1.3; }
+  #racerRail .chips { flex:1; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+  .racerChip { width:60px; height:54px; border:3px solid #10233F; border-radius:14px; background:#20242c; cursor:pointer; position:relative; padding:0; box-shadow:0 4px 0 rgba(0,0,0,.4); }
+  .racerChip .helm { position:absolute; left:8px; right:8px; top:10px; height:22px; border-radius:14px 14px 5px 5px; background:var(--c); }
+  .racerChip .visor { position:absolute; left:12px; right:12px; top:23px; height:8px; border-radius:5px; background:#10233F; }
+  .racerChip.sel { border-color:#FF5A5F; box-shadow:0 5px 0 #c9353a; }
+  #lockIn { font-family:'Fredoka',sans-serif; font-weight:700; font-size:19px; padding:13px 30px; border:3px solid #10233F; border-radius:100px; background:#FFC93C; color:#10233F; box-shadow:0 6px 0 #e0a916; cursor:pointer; }
+  #lockIn:active { transform:translateY(3px); box-shadow:0 3px 0 #e0a916; }
 </style>
 </head>
 <body>
@@ -133,6 +191,7 @@
         <div style="margin-top:18px;height:3px;background:repeating-linear-gradient(90deg,#10233F 0 10px,transparent 10px 20px)"></div>
         <div style="margin-top:12px;font-weight:800;font-size:12px;color:#8895a7;line-height:1.55;max-width:290px">Tilt to steer · double-tap GAS to boost.<br>First across the line after 3 laps wins.<br>No QR? Add <b>?join=CODE</b> to this URL on your phone.</div>
         <div id="hostNetStatus" style="margin-top:8px;font-weight:800;font-size:11px;color:#b3bdcc">Starting connection service…</div>
+        <button id="openRacer" style="margin-top:14px;width:100%;font-family:'Fredoka',sans-serif;font-weight:700;font-size:16px;padding:12px 0;border:3px solid #10233F;border-radius:14px;background:#FFC93C;color:#10233F;box-shadow:0 5px 0 #e0a916;cursor:pointer">🏎️ PICK YOUR RACER</button>
       </div>
       <div style="min-width:330px;max-width:420px">
         <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px">
@@ -154,6 +213,15 @@
     </div>
   </div>
   <div id="hud">waiting for drivers…</div>
+  <div id="raceHud">
+    <div id="posCard">
+      <div class="hcard pos"><div class="lab">POSITION</div><div class="big" id="posBig">1<span>st</span></div></div>
+      <div class="hcard lap"><div class="lab">LAP</div><div class="big" id="lapBig">1/3</div></div>
+    </div>
+    <div id="timePill"><span class="lab">TIME</span><span id="timeVal">0:00.0</span></div>
+    <div id="standings"></div>
+    <div id="boostBar"><div class="track"><div class="fill" id="boostFill"></div></div><div class="lab" id="boostLab">BOOST</div></div>
+  </div>
   <div id="settingsPanel" style="display:none;position:fixed;top:60px;left:18px;z-index:30;
     background:#fff;color:#10233F;border:4px solid #10233F;border-radius:22px;padding:18px 22px;min-width:230px;
     box-shadow:0 10px 0 rgba(16,35,63,.25);">
@@ -175,9 +243,31 @@
   </div>
   <div id="bigMsg"></div>
   <div id="stateMsg">Waiting for drivers</div>
-  <canvas id="minimap" width="180" height="180" style="position:fixed;left:18px;bottom:18px;z-index:5;
-    background:rgba(255,255,255,.92);border:3px solid #10233F;border-radius:16px;
-    box-shadow:0 5px 0 rgba(16,35,63,.22)"></canvas>
+  <div id="mmWrap"><div class="lab">CIRCUIT 1</div>
+    <canvas id="minimap" width="180" height="180" style="display:block;border-radius:10px"></canvas>
+  </div>
+</div>
+
+<!-- PICK YOUR RACER (laptop) -->
+<div id="racerSelect">
+  <div class="strip"></div>
+  <div class="eyebrow"><span>DESK LEAGUE · GRAND PRIX</span></div>
+  <h1>Pick your racer</h1>
+  <div id="racerStage">
+    <div id="racerCanvas"></div>
+    <div id="racerCard">
+      <h2 id="racerName">Pencil Dude</h2>
+      <div class="tag" id="racerTag">Sharp when it counts</div>
+      <div class="statRow"><div class="lab">TOP SPEED</div><div class="bar"><div class="barfill" id="statSp" style="background:#FF5A5F"></div></div></div>
+      <div class="statRow"><div class="lab">HANDLING</div><div class="bar"><div class="barfill" id="statHd" style="background:#6fd3ff"></div></div></div>
+      <div class="statRow"><div class="lab">BOOST</div><div class="bar"><div class="barfill" id="statBo" style="background:#FFC93C"></div></div></div>
+    </div>
+  </div>
+  <div id="racerRail">
+    <div class="cnt">CHOOSE FROM<br>8 RACERS</div>
+    <div class="chips" id="racerChips"></div>
+    <button id="lockIn">LOCK IN ✓</button>
+  </div>
 </div>
 
 <!-- PHONE -->
@@ -186,9 +276,14 @@
   <button class="bigbtn" id="btnMotion" style="display:none">ENABLE MOTION SENSORS</button>
   <div id="phoneInstr" style="display:none;font-size:17px;font-weight:700;line-height:1.6;color:#fff;max-width:340px;text-shadow:0 1px 0 rgba(16,35,63,.25)">
     Turn your phone <b>sideways</b> — <b>it's your steering wheel.</b><br>
-    Tilt to steer · hold GAS · <b>double-tap GAS to BOOST</b> when charged (watch the big screen)!
+    Tilt to steer · hold GAS · <b>double-tap GAS to BOOST</b> when charged (watch the big screen)!<br>
+    Hold <b>GAS + BRAKE</b> through a corner to <b>DRIFT</b> — let go for a speed burst! 💨<br>
+    Grab <b>item boxes</b> 🎁 on the track, then tap <b>USE</b> to fire — 🍄 boost, 🍌 banana, ⭐ star!
   </div>
   <div id="steerDial"></div>
+  <div id="itemBtn" style="display:none;opacity:.5;font-family:'Fredoka',sans-serif;font-weight:700;font-size:26px;
+    padding:14px 20px;border:3px solid #10233F;border-radius:18px;background:#FFC93C;color:#10233F;
+    box-shadow:0 6px 0 #e0a916;min-width:150px;text-align:center">—</div>
   <button class="bigbtn" id="btnCal" style="display:none">🎯 HOLD WHEEL STRAIGHT — TAP TO CENTER</button>
   <div id="pedals">
     <div class="pedal" id="brakeBtn">🛑 BRAKE</div>
@@ -596,10 +691,28 @@
       k.heading = Math.atan2(tans[backI].x, -tans[backI].z);
       k.v = 0; k.steerSmooth = 0; k.curIdx = backI; k.halfFlag = false;
     }
+    function makeHelmet(color){
+      var h = new THREE.Group();
+      var dome = part(new THREE.SphereGeometry(.34, 18, 12, 0, Math.PI*2, 0, Math.PI*0.62), color);
+      h.add(dome);
+      var rim = part(new THREE.TorusGeometry(.33, .05, 8, 22), 0xffffff);
+      rim.rotation.x = Math.PI/2; h.add(rim);
+      var visor = part(new THREE.BoxGeometry(.5, .16, .42), 0x10233F);
+      visor.position.set(0, 0, .18); h.add(visor);
+      var stripe = part(new THREE.BoxGeometry(.1, .32, .5), 0xffffff);
+      stripe.position.set(0, .12, 0); h.add(stripe);
+      return h;
+    }
     function swapDriver(k, charId){
       while (k.mesh.seat.children.length) k.mesh.seat.remove(k.mesh.seat.children[0]);
       var def = castById(charId);
-      k.mesh.seat.add(def.build());
+      var driver = def.build();
+      var box = new THREE.Box3().setFromObject(driver); // local extents (not yet parented)
+      k.mesh.seat.add(driver);
+      // racing helmet in the racer's colour, perched on the head
+      var hel = makeHelmet(k.color || 0xffffff);
+      hel.position.y = box.max.y - .18;
+      k.mesh.seat.add(hel);
       k.charEmoji = def.emoji; k.charName = def.name;
       k.stats = STATS[def.id] || STATS.fork;
     }
@@ -615,7 +728,10 @@
         curIdx: 0, offroad: false, wasOff: false,
         lap: 0, lapStart: 0, lapTimes: [], bestLap: null, halfFlag: false,
         finished: false, finishTime: null, auto: false, nextSkid: 0,
-        boost: 0, boostUntil: 0
+        boost: 0, boostUntil: 0,
+        driftCharge: 0, wasDrift: false, driftDir: 0,
+        lapRec: [], ghostPath: null, lastRec: 0,
+        item: null, spinUntil: 0, starUntil: 0, _useAt: 0
       };
       swapDriver(k, slot === 0 ? p1Char : CAST[(slot * 2 + 1) % CAST.length].id);
       gridPlace(k, slot);
@@ -713,7 +829,14 @@
         k.lap = 0; k.lapTimes = []; k.bestLap = null;
         k.finished = false; k.finishTime = null;
         k.boost = 0; k.boostUntil = 0;
+        k.driftCharge = 0; k.wasDrift = false; k.driftDir = 0;
+        k.lapRec = []; k.lastRec = 0; // keep ghostPath across races (best lap persists)
+        k.item = null; k.spinUntil = 0; k.starUntil = 0; k._useAt = 0;
+        if (k.conn){ try { k.conn.send({ t:'item', id:null, emoji:'' }); } catch(e){} }
       });
+      if (ghost) ghost.group.visible = false;
+      hazards.forEach(function(h){ scene.remove(h.mesh); }); hazards = [];
+      itemBoxes.forEach(function(b){ b.active = true; b.group.visible = true; b.respawnAt = 0; });
       document.getElementById('connectPanel').style.display = 'none';
       document.body.classList.remove('inLobby');
       race = 'count'; countStart = performance.now(); lastCountBeep = -1;
@@ -745,13 +868,15 @@
         updateLobby();
       }
       else if (msg.t === 'boost'){ tryBoost(k); }
+      else if (msg.t === 'item'){ useItem(k, performance.now()); }
     }
     // boost meters live on the laptop leaderboard (phones stay clean)
     window._gk = {
       state: function(){ return { race: race, karts: karts.map(function(k){
         return { name: k.name, lap: k.lap, v: +k.v.toFixed(1), idx: k.curIdx,
           finished: k.finished, time: k.finishTime ? fmt(k.finishTime) : null,
-          best: k.bestLap ? fmt(k.bestLap) : null }; }) }; },
+          best: k.bestLap ? fmt(k.bestLap) : null,
+          drift: !!k.wasDrift, item: k.item }; }) }; },
       ctl: function(s, g, b){ if (karts[0]) onData({ t:'ctl', s:s, g:g, b:b }, karts[0]); },
       arm: function(){ if (!karts.length) addKart(null); startRace(); },
       auto: function(on){ if (!karts.length) addKart(null); karts[0].auto = !!on; },
@@ -775,6 +900,73 @@
     Array.prototype.forEach.call(document.querySelectorAll('.castBtn'), function(b){
       b.addEventListener('click', function(){ setCharacter(b.getAttribute('data-char')); });
     });
+
+    /* ---------- Pick Your Racer screen ---------- */
+    var RACER_TAG = { pencil:'Sharp when it counts', fork:'Steady and balanced', crayon:'Smooth operator',
+      highlighter:'Bright and quick', mug:'Full of beans ☕', eraser:'Rubs out mistakes',
+      sticky:'Sticks the corners', glue:'Bonds to the track' };
+    var RACER_COL = { pencil:'#FF5A5F', fork:'#6fd3ff', crayon:'#FFC93C', highlighter:'#8a53d6',
+      mug:'#2FBF71', eraser:'#23A6D5', sticky:'#ff9ec4', glue:'#FDD64B' };
+    var statRange = (function(){
+      var r = { sp:[9,-9], hd:[9,-9], bo:[9,-9] };
+      CAST.forEach(function(c){ var s = STATS[c.id] || STATS.fork; ['sp','hd','bo'].forEach(function(k){
+        r[k][0] = Math.min(r[k][0], s[k]); r[k][1] = Math.max(r[k][1], s[k]); }); });
+      return r;
+    })();
+    function statPct(k, v){ var lo = statRange[k][0], hi = statRange[k][1]; return Math.round(32 + (hi > lo ? (v-lo)/(hi-lo) : .5) * 68); }
+    var pv = null;
+    function initRacerPreview(){
+      var cv = document.getElementById('racerCanvas');
+      var w = cv.clientWidth || 440, h = cv.clientHeight || 320;
+      var r = new THREE.WebGLRenderer({ alpha:true, antialias:true });
+      r.setPixelRatio(Math.min(devicePixelRatio, 2)); r.setSize(w, h); cv.appendChild(r.domElement);
+      var sc = new THREE.Scene();
+      sc.add(new THREE.HemisphereLight(0xffffff, 0x2a2e37, 1.1));
+      var dl = new THREE.DirectionalLight(0xffffff, .85); dl.position.set(4, 8, 6); sc.add(dl);
+      var cam = new THREE.PerspectiveCamera(42, w/h, .1, 100);
+      cam.position.set(2.7, 1.9, 3.9); cam.lookAt(0, .8, 0);
+      var km = buildKartMesh(0xFF5A5F); sc.add(km.group);
+      pv = { r:r, sc:sc, cam:cam, kart:km, fake:{ mesh:km, color:0xFF5A5F }, sel:p1Char, running:false };
+    }
+    function pvLoop(){
+      if (!pv || !pv.running) return;
+      pv.kart.group.rotation.y += .012;
+      pv.r.render(pv.sc, pv.cam);
+      requestAnimationFrame(pvLoop);
+    }
+    function selectRacer(id){
+      if (!pv) return;
+      pv.sel = id; swapDriver(pv.fake, id);
+      var def = castById(id), st = STATS[id] || STATS.fork;
+      document.getElementById('racerName').textContent = def.emoji + ' ' + def.name;
+      document.getElementById('racerTag').textContent = RACER_TAG[id] || '';
+      document.getElementById('statSp').style.width = statPct('sp', st.sp) + '%';
+      document.getElementById('statHd').style.width = statPct('hd', st.hd) + '%';
+      document.getElementById('statBo').style.width = statPct('bo', st.bo) + '%';
+      Array.prototype.forEach.call(document.querySelectorAll('.racerChip'), function(c){
+        c.className = 'racerChip' + (c.getAttribute('data-id') === id ? ' sel' : '');
+      });
+    }
+    function buildRacerRail(){
+      var wrap = document.getElementById('racerChips');
+      wrap.innerHTML = CAST.map(function(c){
+        return '<button class="racerChip" data-id="' + c.id + '" style="--c:' + (RACER_COL[c.id] || '#FF5A5F') + '" title="' + c.name + '">' +
+          '<span class="helm"></span><span class="visor"></span></button>';
+      }).join('');
+      Array.prototype.forEach.call(wrap.querySelectorAll('.racerChip'), function(c){
+        c.addEventListener('click', function(){ selectRacer(c.getAttribute('data-id')); });
+      });
+    }
+    function openRacerSelect(){
+      document.getElementById('racerSelect').style.display = 'flex';
+      if (!pv){ initRacerPreview(); buildRacerRail(); }
+      pv.running = true; pvLoop(); selectRacer(p1Char);
+    }
+    function closeRacerSelect(){ if (pv) pv.running = false; document.getElementById('racerSelect').style.display = 'none'; }
+    (function(){
+      var ob = document.getElementById('openRacer'); if (ob) ob.addEventListener('click', openRacerSelect);
+      var li = document.getElementById('lockIn'); if (li) li.addEventListener('click', function(){ if (pv) setCharacter(pv.sel); closeRacerSelect(); });
+    })();
     var settingsPanel = document.getElementById('settingsPanel');
     document.getElementById('logo').addEventListener('click', function(){
       settingsPanel.style.display = (settingsPanel.style.display === 'none') ? 'block' : 'none';
@@ -818,7 +1010,12 @@
       if (race === 'racing' && !k.finished && k.halfFlag && prev > N*.85 && k.curIdx < N*.15){
         var lt = now - k.lapStart;
         k.lapTimes.push(lt);
-        if (!k.bestLap || lt < k.bestLap) k.bestLap = lt;
+        var isBest = (!k.bestLap || lt < k.bestLap);
+        if (isBest) k.bestLap = lt;
+        if (k.slot === 0){
+          if (isBest && k.lapRec.length > 4) k.ghostPath = k.lapRec.slice();
+          k.lapRec = [];
+        }
         k.lap++;
         k.halfFlag = false;
         k.lapStart = now;
@@ -885,6 +1082,91 @@
     document.addEventListener('visibilitychange', function(){
       if (!document.hidden){ last = performance.now(); schedule(); }
     });
+    /* ---------- items (boxes, effects, hazards) ---------- */
+    var ITEMS = [ { id:'mushroom', emoji:'🍄' }, { id:'banana', emoji:'🍌' }, { id:'star', emoji:'⭐' } ];
+    function itemEmoji(id){ for (var i=0;i<ITEMS.length;i++) if (ITEMS[i].id===id) return ITEMS[i].emoji; return ''; }
+    var itemBoxes = [];
+    [0.14, 0.39, 0.61, 0.86].forEach(function(fr){
+      var idx = Math.floor(fr * N) % N;
+      var g = new THREE.Group();
+      var cube = new THREE.Mesh(new THREE.BoxGeometry(1.2,1.2,1.2),
+        new THREE.MeshPhongMaterial({ color:0xFFC93C, emissive:0x6a4e00, shininess:60, transparent:true, opacity:.9 }));
+      cube.castShadow = true; g.add(cube);
+      var band = new THREE.Mesh(new THREE.TorusGeometry(.85,.08,8,4), lamb(0x10233F));
+      band.rotation.x = Math.PI/2; g.add(band);
+      g.position.set(pts[idx].x, 1.15, pts[idx].z); scene.add(g);
+      itemBoxes.push({ idx:idx, group:g, cube:cube, active:true, respawnAt:0 });
+    });
+    var hazards = [];
+    function dropHazard(k){
+      var bx = k.pos.x - Math.sin(k.heading)*2.6, bz = k.pos.z + Math.cos(k.heading)*2.6;
+      var m = new THREE.Mesh(new THREE.SphereGeometry(.5,12,10), lamb(0xFDD64B));
+      m.scale.set(1,.62,1.3); m.position.set(bx, .42, bz); m.castShadow = true; scene.add(m);
+      hazards.push({ x:bx, z:bz, mesh:m, owner:k, until:performance.now()+400 });
+    }
+    function giveItem(k, now){
+      k.item = ITEMS[Math.floor(Math.random()*ITEMS.length)].id;
+      if (k.auto) k._useAt = now + 900 + Math.random()*1400;
+      if (k.conn){ try { k.conn.send({ t:'item', id:k.item, emoji:itemEmoji(k.item) }); } catch(e){} }
+    }
+    function useItem(k, now){
+      if (!k.item || race !== 'racing' || k.finished) return;
+      var id = k.item; k.item = null;
+      if (id === 'mushroom'){ k.boostUntil = Math.max(k.boostUntil, now) + 1600; beep(520,.25,'square',.2); }
+      else if (id === 'star'){ k.starUntil = now + 6000; k.boostUntil = now + 6000; beep(720,.4,'triangle',.2); }
+      else if (id === 'banana'){ dropHazard(k); beep(300,.2,'sawtooth',.14); }
+      if (k.conn){ try { k.conn.send({ t:'item', id:null, emoji:'' }); } catch(e){} }
+    }
+    function itemsStep(k, now){
+      if (race !== 'racing' || k.finished) return;
+      if (!k.item && now >= k.starUntil){
+        for (var i=0;i<itemBoxes.length;i++){
+          var b = itemBoxes[i]; if (!b.active) continue;
+          var dx = k.pos.x - pts[b.idx].x, dz = k.pos.z - pts[b.idx].z;
+          if (dx*dx + dz*dz < 4.5){ giveItem(k, now); b.active = false; b.group.visible = false; b.respawnAt = now + 4000; break; }
+        }
+      }
+      if (now >= k.starUntil && now >= k.spinUntil){
+        for (var h=0;h<hazards.length;h++){
+          var hz = hazards[h];
+          if (hz.owner === k && now < hz.until) continue;
+          var ex = k.pos.x - hz.x, ez = k.pos.z - hz.z;
+          if (ex*ex + ez*ez < 2.4){
+            k.spinUntil = now + 1200; k.v *= .3;
+            scene.remove(hz.mesh); hazards.splice(h,1); beep(180,.3,'sawtooth',.14);
+            if (k.conn){ try { k.conn.send({ t:'result', line:'🍌 spun out!' }); } catch(e){} }
+            break;
+          }
+        }
+      }
+      if (k.auto && k.item && now > (k._useAt||0)) useItem(k, now);
+    }
+
+    /* ---------- best-lap ghost (player kart) ---------- */
+    var ghost = null;
+    function ensureGhost(){
+      if (ghost) return;
+      ghost = buildKartMesh(0x9fe8ff);
+      ghost.group.traverse(function(o){
+        if (o.material){ o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = .3; o.material.depthWrite = false; }
+      });
+      scene.add(ghost.group); ghost.group.visible = false;
+    }
+    function updateGhost(k, now){
+      if (!k.ghostPath || !k.ghostPath.length || race !== 'racing'){ if (ghost) ghost.group.visible = false; return; }
+      ensureGhost();
+      var path = k.ghostPath, t = now - k.lapStart;
+      var dur = path[path.length-1].t || 1;
+      if (t > dur) t = dur;               // ghost holds at the line once its lap is done
+      var lo = 0, hi = path.length - 1;
+      while (lo < hi){ var mid = (lo+hi) >> 1; if (path[mid].t < t) lo = mid+1; else hi = mid; }
+      var b = path[lo], a = path[Math.max(0, lo-1)];
+      var span = (b.t - a.t) || 1, f = Math.max(0, Math.min(1, (t - a.t)/span));
+      ghost.group.position.set(a.x + (b.x-a.x)*f, 0, a.z + (b.z-a.z)*f);
+      var dh = b.h - a.h; while (dh > Math.PI) dh -= Math.PI*2; while (dh < -Math.PI) dh += Math.PI*2;
+      ghost.group.rotation.y = -(a.h + dh*f);
+      ghost.group.visible = true;
+    }
     function stepKart(k, dt, now){
       if (k.auto && race !== 'count'){
         var tgt = pts[(k.curIdx + 9) % N];
@@ -900,35 +1182,65 @@
       var gas = k.ctl.g || (k.slot === 0 && kb.u);
       var brake = k.ctl.b || (k.slot === 0 && kb.d);
       if (race === 'count'){ gas = false; brake = false; }
+      var spun = now < k.spinUntil;
+      if (spun){ gas = false; brake = false; }
       var steerIn = k.ctl.s + (k.slot === 0 ? (kb.l ? -32 : 0) + (kb.r ? 32 : 0) : 0);
       k.steerSmooth += (steerIn - k.steerSmooth) * Math.min(1, dt*10);
       var steerN = Math.max(-1, Math.min(1, k.steerSmooth / 38));
       var st = k.stats || { sp:1, hd:1, bo:1 };
       var boosting = now < k.boostUntil;
-      if (race === 'racing' && !k.finished && !k.offroad && !boosting){
+      // ---- drift / powerslide: hold GAS + BRAKE while turning fast, release for a boost ----
+      var drifting = race === 'racing' && !k.finished && !k.offroad && !boosting &&
+                     gas && brake && Math.abs(steerN) > .3 && k.v > 12;
+      if (drifting){
+        if (!k.wasDrift) k.driftDir = steerN < 0 ? -1 : 1;
+        k.driftCharge = Math.min(2.4, k.driftCharge + dt);
+      } else if (k.wasDrift){
+        // release: cash the slide in for a boost sized to how long it was held
+        if (k.driftCharge > .55){
+          k.boostUntil = now + Math.min(1700, 480 + k.driftCharge * 640) * st.bo;
+          beep(600, .22, 'square', .16);
+          if (k.conn){ try { k.conn.send({ t:'result', line: '💨 drift boost!' }); } catch(e){} }
+        }
+        k.driftCharge = 0;
+      }
+      k.wasDrift = drifting;
+      boosting = now < k.boostUntil; // a fresh drift boost applies immediately
+      if (race === 'racing' && !k.finished && !k.offroad && !boosting && !drifting){
         k.boost = Math.min(1, k.boost + dt * .08); // ~12s to charge
       }
-      var maxV = k.offroad ? 10 : 30 * st.sp * (boosting ? 1.35 : 1);
+      var maxV = k.offroad ? 10 : 30 * st.sp * (boosting ? 1.35 : 1) * (now < k.starUntil ? 1.2 : 1);
       if (gas) k.v += (boosting ? 24 : 13) * dt;
-      if (brake) k.v -= 24 * dt;
+      if (brake && !drifting) k.v -= 24 * dt;   // during a drift the brake steers, it doesn't stop you
+      if (drifting) k.v -= k.v * .12 * dt;       // a little scrub while sliding
       k.v -= k.v * (k.offroad ? 1.7 : .45) * dt;
       k.v = Math.max(-6, Math.min(maxV, k.v));
       if (Math.abs(k.v) > .3){
-        k.heading += steerN * 2.0 * st.hd * dt * Math.min(1, Math.abs(k.v)/7) * (k.v < 0 ? -1 : 1);
+        var turn = steerN * 2.0 * st.hd * dt * Math.min(1, Math.abs(k.v)/7) * (k.v < 0 ? -1 : 1);
+        if (drifting) turn += k.driftDir * 1.15 * dt; // extra bite into the corner
+        k.heading += turn;
       }
+      if (spun) k.heading += 9 * dt; // banana spin-out
       k.pos.x += Math.sin(k.heading) * k.v * dt;
       k.pos.z += -Math.cos(k.heading) * k.v * dt;
       updateProgress(k, now);
+      itemsStep(k, now);
       k.mesh.group.position.set(k.pos.x, 0, k.pos.z);
       k.mesh.group.rotation.y = -k.heading;
-      k.mesh.group.rotation.z = -steerN * .09 * Math.min(1, Math.abs(k.v)/12);
+      k.mesh.group.rotation.z = -steerN * .09 * Math.min(1, Math.abs(k.v)/12) - (drifting ? k.driftDir * .16 : 0);
       k.mesh.fronts.forEach(function(h){ h.rotation.y = -steerN * .5; });
       k.mesh.wheels.forEach(function(w){ w.rotation.x += k.v * dt / .38; });
       k.mesh.seat.position.y = .55 + Math.sin(now*.02 + k.slot) * .012 * Math.min(1, Math.abs(k.v)/5);
       k.mesh.seat.rotation.z = steerN * .17 * Math.min(1, Math.abs(k.v)/10);
-      if (race === 'racing' && Math.abs(steerN) > .75 && Math.abs(k.v) > 15 && now > k.nextSkid){
-        k.nextSkid = now + 300;
-        beep(95, .16, 'sawtooth', .06);
+      k.mesh.group.scale.setScalar(now < k.starUntil ? 1 + .05*Math.sin(now*.03) : 1); // star shimmer
+      if (race === 'racing' && (drifting || (Math.abs(steerN) > .75 && Math.abs(k.v) > 15)) && now > k.nextSkid){
+        k.nextSkid = now + (drifting ? 150 : 300);
+        beep(drifting ? 128 : 95, .16, 'sawtooth', .06);
+      }
+      // record the player's lap for the best-lap ghost, and drive the ghost
+      if (race === 'racing' && k.slot === 0){
+        if (now - (k.lastRec || 0) > 40){ k.lastRec = now; k.lapRec.push({ t: now - k.lapStart, x: k.pos.x, z: k.pos.z, h: k.heading }); }
+        updateGhost(k, now);
       }
       return gas;
     }
@@ -977,6 +1289,12 @@
         if (clouds[ci].position.x > 260) clouds[ci].position.x = -260;
       }
 
+      for (var ib = 0; ib < itemBoxes.length; ib++){
+        var ibx = itemBoxes[ib];
+        if (ibx.active){ ibx.group.rotation.y += dt * 2.2; ibx.cube.position.y = .12 * Math.sin(now*.004 + ib); }
+        else if (now > ibx.respawnAt){ ibx.active = true; ibx.group.visible = true; }
+      }
+
       if (engineOsc && AC && AC.state === 'running'){
         var lv = lead ? Math.abs(lead.v) : 0;
         engineOsc.frequency.value = 55 + lv * 7 + (anyGas ? 12 : 0);
@@ -985,22 +1303,36 @@
           : Math.min(.06, .012 + lv * .002 + (anyGas ? .015 : 0));
       }
 
-      if (race === 'racing' || race === 'done'){
-        hud.innerHTML = karts.map(function(k){
-          return '<span style="color:' + cssColor(k.color) + '">●</span> ' + k.name + ' ' + (k.charEmoji||'') +
-            (k.finished ? ' 🏁 ' + fmt(k.finishTime)
-              : ' · L' + Math.min(k.lap+1, LAPS) +
-                (now < k.boostUntil ? ' · <b style="color:#e0a916">⚡BOOSTING</b>'
-                  : k.boost >= 1 ? ' · <b style="color:#e0a916">⚡READY</b> (2-tap gas)'
-                  : ' · ⚡' + Math.round(k.boost*100) + '%') +
-                (k.offroad ? ' 🌿' : ''));
-        }).join('<br>') || 'no racers';
+      var rh = document.getElementById('raceHud');
+      document.getElementById('logo').style.display = (race === 'racing' || race === 'count') ? 'none' : 'block';
+      if ((race === 'racing' || race === 'done') && karts.length){
+        rh.style.display = 'block';
+        var me = karts[0];
+        var ranked = karts.slice().sort(function(a,b){ return progressOf(b) - progressOf(a); });
+        var myPos = ranked.indexOf(me) + 1;
+        var suf = myPos===1 ? 'st' : myPos===2 ? 'nd' : myPos===3 ? 'rd' : 'th';
+        document.getElementById('posBig').innerHTML = myPos + '<span>' + suf + '</span>';
+        document.getElementById('lapBig').textContent = Math.min(me.lap+1, LAPS) + '/' + LAPS;
+        document.getElementById('timeVal').textContent = (race === 'racing') ? fmt(now - raceStart) : (me.finishTime ? fmt(me.finishTime) : '—');
+        var lead = ranked[0], leadProg = progressOf(lead), estLap = lead.bestLap || 22000;
+        document.getElementById('standings').innerHTML = ranked.map(function(k, i){
+          var gap;
+          if (k.finished) gap = fmt(k.finishTime);
+          else if (i === 0) gap = '—';
+          else gap = '+' + ((leadProg - progressOf(k)) * (estLap/1000/N)).toFixed(1);
+          return '<div class="row' + (k===me ? ' me' : '') + '">' +
+            '<span class="rk">' + (i+1) + '</span>' +
+            '<span class="dot" style="background:' + cssColor(k.color) + '"></span>' +
+            '<span class="nm">' + (k===me ? 'YOU' : (k.name + (k.charEmoji ? ' '+k.charEmoji : ''))) +
+              (k.item ? ' ' + itemEmoji(k.item) : '') + (now < k.starUntil ? ' ⭐' : '') + (now < k.spinUntil ? ' 💫' : '') + '</span>' +
+            '<span class="gp">' + gap + '</span></div>';
+        }).join('');
+        var boosting = now < me.boostUntil;
+        document.getElementById('boostFill').style.width = (boosting ? 100 : Math.round(me.boost*100)) + '%';
+        document.getElementById('boostLab').textContent = boosting ? '⚡ BOOSTING'
+          : (me.boost >= 1 ? 'DOUBLE-TAP GAS TO BOOST ▶' : 'BOOST ' + Math.round(me.boost*100) + '%');
       } else {
-        var joined = karts.filter(function(k){ return k.conn || k.auto || k.slot === 0; });
-        hud.innerHTML = (joined.length ? joined.map(function(k){
-            return '<span style="color:' + cssColor(k.color) + '">●</span> ' + k.name + ' ' + (k.charEmoji||'');
-          }).join('<br>') : 'waiting for drivers…') +
-          (trackRecord ? '<br>🏆 track record: ' + fmt(trackRecord) : '');
+        rh.style.display = 'none';
       }
 
       if (!document.hidden){
@@ -1043,6 +1375,9 @@
     var brakeBtn = document.getElementById('brakeBtn');
     var steerDial = document.getElementById('steerDial');
     var result = document.getElementById('phoneResult');
+    var itemBtn = document.getElementById('itemBtn');
+    var heldItem = null;
+    itemBtn.addEventListener('click', function(){ if (heldItem && conn && connected) conn.send({ t:'item' }); });
 
     var conn = null, connected = false;
     var peer = new Peer({ debug:1 });
@@ -1060,6 +1395,15 @@
         }
         if (msg && msg.t === 'buzz'){
           if (navigator.vibrate) navigator.vibrate([90, 40, 90]);
+        }
+        if (msg && msg.t === 'item'){
+          heldItem = msg.id || null;
+          itemBtn.textContent = msg.emoji ? msg.emoji + ' USE!' : '—';
+          itemBtn.style.opacity = msg.emoji ? '1' : '.5';
+          itemBtn.style.background = msg.emoji ? '#FF5A5F' : '#FFC93C';
+          itemBtn.style.color = msg.emoji ? '#fff' : '#10233F';
+          itemBtn.style.boxShadow = msg.emoji ? '0 6px 0 #c9353a' : '0 6px 0 #e0a916';
+          if (msg.emoji && navigator.vibrate) navigator.vibrate(60);
         }
       });
       conn.on('close', function(){ status.textContent = 'Disconnected — refresh both devices.'; connected = false; });
@@ -1101,6 +1445,7 @@
           btnCal.style.display = 'block';
           btnArm.style.display = 'block';
           pedals.style.display = 'flex';
+          itemBtn.style.display = 'block';
           status.textContent = 'Wheel live ✔ — hold sideways and drive';
         } else {
           status.textContent = 'Motion permission denied — enable in Settings > Safari.';
