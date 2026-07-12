@@ -146,8 +146,8 @@
   <div id="phoneStatus">Connecting to laptop…</div>
   <button class="bigbtn" id="btnMotion" style="display:none">ENABLE MOTION SENSORS</button>
   <div id="phoneInstr" style="display:none;font-size:17px;font-weight:700;line-height:1.6;color:#fff;max-width:340px;text-shadow:0 1px 0 rgba(16,35,63,.25)">
-    Turn your phone <b>sideways</b> and grip it with both hands — <b>it's your steering wheel.</b><br>
-    BRAKE under your left thumb, GAS under your right. Tilt to steer!
+    Turn your phone <b>sideways</b> — <b>it's your steering wheel.</b><br>
+    Tilt to steer · hold GAS · <b>double-tap GAS to BOOST</b> when charged (watch the big screen)!
   </div>
   <div id="steerDial"></div>
   <button class="bigbtn" id="btnCal" style="display:none">🎯 HOLD WHEEL STRAIGHT — TAP TO CENTER</button>
@@ -155,17 +155,6 @@
     <div class="pedal" id="brakeBtn">🛑 BRAKE</div>
     <div class="pedal" id="gasBtn">🏁 GAS</div>
   </div>
-  <div id="charRow" style="display:none;gap:6px;flex-wrap:wrap;justify-content:center;max-width:360px;">
-    <button class="charBtn" data-char="pencil" style="font-size:24px;padding:8px 12px;border:3px solid #10233F;border-radius:12px;background:#fff">✏️</button>
-    <button class="charBtn" data-char="fork" style="font-size:24px;padding:8px 12px;border:3px solid #10233F;border-radius:12px;background:#fff">🍴</button>
-    <button class="charBtn" data-char="crayon" style="font-size:24px;padding:8px 12px;border:3px solid #10233F;border-radius:12px;background:#fff">🖍️</button>
-    <button class="charBtn" data-char="highlighter" style="font-size:24px;padding:8px 12px;border:3px solid #10233F;border-radius:12px;background:#fff">🖊️</button>
-    <button class="charBtn" data-char="mug" style="font-size:24px;padding:8px 12px;border:3px solid #10233F;border-radius:12px;background:#fff">☕</button>
-    <button class="charBtn" data-char="eraser" style="font-size:24px;padding:8px 12px;border:3px solid #10233F;border-radius:12px;background:#fff">🩹</button>
-    <button class="charBtn" data-char="sticky" style="font-size:24px;padding:8px 12px;border:3px solid #10233F;border-radius:12px;background:#fff">📝</button>
-    <button class="charBtn" data-char="glue" style="font-size:24px;padding:8px 12px;border:3px solid #10233F;border-radius:12px;background:#fff">🧴</button>
-  </div>
-  <button class="bigbtn" id="btnBoost" style="display:none;background:#FFC93C;color:#10233F;box-shadow:0 6px 0 #e0a916" disabled>⚡ BOOST 0%</button>
   <button class="bigbtn" id="btnArm" style="display:none">🚦 START RACE</button>
   <div id="phoneResult" style="font-family:'Fredoka',sans-serif;font-size:32px;font-weight:700;color:#fff;min-height:40px;text-shadow:0 3px 0 #10233F"></div>
   <div class="warn">🏎️ GOGAMES is not responsible for imaginary whiplash.</div>
@@ -610,8 +599,8 @@
         if (k) k.conn = c; else k = addKart(c);
         if (!k){ c.send({ t:'result', line: 'Race is full — 4 max!' }); return; }
         var count = karts.filter(function(x){ return x.conn || x.auto; }).length;
-        stateMsg.textContent = k.name + ' joined as ' + k.charName + '! Pick your racer on your phone, then START';
-        c.send({ t:'result', line: 'You are ' + k.name + ' ' + k.charEmoji + ' — pick your racer!' });
+        stateMsg.textContent = k.name + ' joined as ' + k.charName + '! Hit START ENGINES when everyone is in';
+        c.send({ t:'result', line: 'You are ' + k.name + ' ' + k.charEmoji });
         updateLobby();
         c.on('data', function(msg){ onData(msg, k); });
         c.on('close', function(){ k.conn = null; stateMsg.textContent = k.name + ' disconnected'; updateLobby(); });
@@ -699,14 +688,7 @@
       }
       else if (msg.t === 'boost'){ tryBoost(k); }
     }
-    // 1Hz boost meter sync to phones
-    setInterval(function(){
-      karts.forEach(function(k){
-        if (k.conn && k.conn.open){
-          try { k.conn.send({ t:'bst', v: Math.round(k.boost * 100), on: performance.now() < k.boostUntil }); } catch(e){}
-        }
-      });
-    }, 1000);
+    // boost meters live on the laptop leaderboard (phones stay clean)
     window._gk = {
       state: function(){ return { race: race, karts: karts.map(function(k){
         return { name: k.name, lap: k.lap, v: +k.v.toFixed(1), idx: k.curIdx,
@@ -949,8 +931,11 @@
         hud.innerHTML = karts.map(function(k){
           return '<span style="color:' + cssColor(k.color) + '">●</span> ' + k.name + ' ' + (k.charEmoji||'') +
             (k.finished ? ' 🏁 ' + fmt(k.finishTime)
-              : ' · L' + Math.min(k.lap+1, LAPS) + (k.bestLap ? ' · ' + fmt(k.bestLap) : '') +
-                (now < k.boostUntil ? ' ⚡' : '') + (k.offroad ? ' 🌿' : ''));
+              : ' · L' + Math.min(k.lap+1, LAPS) +
+                (now < k.boostUntil ? ' · <b style="color:#e0a916">⚡BOOSTING</b>'
+                  : k.boost >= 1 ? ' · <b style="color:#e0a916">⚡READY</b> (2-tap gas)'
+                  : ' · ⚡' + Math.round(k.boost*100) + '%') +
+                (k.offroad ? ' 🌿' : ''));
         }).join('<br>') || 'no racers';
       } else {
         var joined = karts.filter(function(k){ return k.conn || k.auto || k.slot === 0; });
@@ -1018,12 +1003,6 @@
         if (msg && msg.t === 'buzz'){
           if (navigator.vibrate) navigator.vibrate([90, 40, 90]);
         }
-        if (msg && msg.t === 'bst'){
-          var bb = document.getElementById('btnBoost');
-          if (msg.on){ bb.textContent = '⚡ BOOSTING!'; bb.disabled = true; }
-          else if (msg.v >= 100){ bb.textContent = '⚡ BOOST READY — TAP!'; bb.disabled = false; }
-          else { bb.textContent = '⚡ BOOST ' + msg.v + '%'; bb.disabled = true; }
-        }
       });
       conn.on('close', function(){ status.textContent = 'Disconnected — refresh both devices.'; connected = false; });
     });
@@ -1064,9 +1043,7 @@
           btnCal.style.display = 'block';
           btnArm.style.display = 'block';
           pedals.style.display = 'flex';
-          document.getElementById('charRow').style.display = 'flex';
-          document.getElementById('btnBoost').style.display = 'block';
-          status.textContent = 'Wheel live ✔ — pick your racer, then drive';
+          status.textContent = 'Wheel live ✔ — hold sideways and drive';
         } else {
           status.textContent = 'Motion permission denied — enable in Settings > Safari.';
         }
@@ -1081,19 +1058,6 @@
       if (conn && connected) conn.send({ t:'arm' });
       result.textContent = '';
     });
-    Array.prototype.forEach.call(document.querySelectorAll('.charBtn'), function(b){
-      b.addEventListener('click', function(){
-        if (conn && connected) conn.send({ t:'char', id: b.getAttribute('data-char') });
-        Array.prototype.forEach.call(document.querySelectorAll('.charBtn'), function(x){
-          x.style.background = (x === b) ? '#FFC93C' : '#fff';
-        });
-        if (navigator.vibrate) navigator.vibrate(30);
-      });
-    });
-    document.getElementById('btnBoost').addEventListener('click', function(){
-      if (conn && connected) conn.send({ t:'boost' });
-      if (navigator.vibrate) navigator.vibrate(60);
-    });
     function pedal(el, setter){
       function on(e){ e.preventDefault(); setter(true); el.classList.add('on'); }
       function off(e){ e.preventDefault(); setter(false); el.classList.remove('on'); }
@@ -1104,7 +1068,18 @@
       el.addEventListener('mouseup', off);
       el.addEventListener('mouseleave', off);
     }
-    pedal(gasBtn, function(x){ gas = x; });
+    var lastGasTap = 0;
+    pedal(gasBtn, function(x){
+      gas = x;
+      if (x){ // double-tap GAS = BOOST
+        var now = performance.now();
+        if (now - lastGasTap < 350 && conn && connected){
+          conn.send({ t:'boost' });
+          if (navigator.vibrate) navigator.vibrate(60);
+        }
+        lastGasTap = now;
+      }
+    });
     pedal(brakeBtn, function(x){ brake = x; });
 
     function startSensors(){
