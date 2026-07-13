@@ -62,12 +62,25 @@ lap-valid needs halfFlag in band N*.4–.6; Worker clock + substepping (≤.033)
 - CDP evaluate ~45s limit — fire-then-poll for long waits.
 - Records: localStorage `gogolf_best_round`, `gokart_best`.
 
-## Backlog (the "surprise board" — remaining)
-1. **GOGOLF turn-based multiplayer**: per-player balls, turn rotation, phone "YOUR TURN" alert, shared scorecard + names.
-2. **GOKART design package remainder** (reference HTMLs from Claude Design, previously in /tmp/gkd —
-   ask Brecken to re-upload the zip if needed): In-Race HUD restyle (position/lap cards, standings list,
-   minimap style, boost meter bar), Pick Your Racer screen w/ stat card, DRIFT, ITEMS, racing helmets on cast.
-3. Nice-to-haves: ghost kart, golf hole flyover, sand particles, putting-green mode, GOGAMES landing page.
+## Backlog — ALL SHIPPED (2026-07-12/13)
+Everything below is built, verified, and live. Landing page now serves at https://gogaminginc.github.io/.
+1. **GOGOLF turn-based multiplayer** ✅ — per-player balls (colored course markers), "away plays farthest"
+   turn rotation, phone "⛳ YOUR TURN!" / "⏳ waiting" alerts, live laptop leaderboard, end-of-round
+   scorecard (per-hole grid + winner), lobby with join list + START ROUND / FREE PLAY. Late joiners sit
+   out the current hole. Phone sends {t:'join',name,char}; host broadcasts {t:'turn',your,who,mode}.
+2. **GOKART design package** ✅ — In-Race HUD restyle (#posCard/#lapCard/#timePill/#standings/#boostBar,
+   navy "CIRCUIT 1" #mmWrap minimap), Pick Your Racer screen (#racerSelect: live 3D kart preview via a
+   second WebGLRenderer, stat card from STATS, 8-helmet rail, LOCK IN), DRIFT (GAS+BRAKE in a corner →
+   charge → boost on release), ITEMS (🍄 boost / 🍌 banana spin-out / ⭐ star; item boxes + phone USE
+   button {t:'item'}), racing helmets on the cast (makeHelmet, bbox-fitted per driver).
+3. Nice-to-haves ✅ — ghost kart (best-lap translucent replay), golf hole flyover, sand particles,
+   putting-green mode (range→flags→course→putt), GOGAMES landing page.
+
+## Next ideas (fresh backlog — nothing started)
+- GOGOLF: per-player character/color pick on the phone; hole flyover skip button; wind indicator polish.
+- GOKART: phone-side DRIFT/ITEM buttons (design shows them; currently drift = GAS+BRAKE, item = USE btn);
+  more tracks/circuits; blue-shell-style catch-up item; online-gap tuning for standings.
+- Shared: real join flow on the landing page; sound/music pass; mobile-landscape host support.
 
 ## Token-efficiency rules for future sessions
 - Start fresh chats per work session; point Claude at this doc (it's committed in the gokart repo root:
