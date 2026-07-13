@@ -120,6 +120,28 @@
   #mmWrap { position:fixed; left:18px; bottom:18px; z-index:5; background:#10233F; border:3px solid #000;
             border-radius:16px; box-shadow:0 6px 0 rgba(0,0,0,.35); padding:7px 8px 8px; }
   #mmWrap .lab { font-family:'Nunito',sans-serif; font-weight:900; font-size:10px; letter-spacing:.16em; color:#9aa3b2; margin:1px 2px 5px; }
+  /* ---------- split-screen HUD ---------- */
+  #paneLabels { display:none; }
+  .paneLabel { position:fixed; z-index:17; min-width:150px; background:rgba(16,35,63,.82);
+    border:3px solid #10233F; border-radius:0 0 16px 0; padding:8px 12px; color:#fff;
+    font-family:'Nunito',sans-serif; pointer-events:none; }
+  .paneLabel .pl-row { display:flex; align-items:center; gap:8px; }
+  .paneLabel .pl-dot { width:12px; height:12px; border-radius:50%; border:2px solid rgba(0,0,0,.4); }
+  .paneLabel .pl-name { font-weight:900; font-size:15px; flex:1; white-space:nowrap; }
+  .paneLabel .pl-pos { font-family:'Fredoka',sans-serif; font-weight:700; font-size:16px; color:#FFC93C; }
+  .paneLabel .pl-sub { font-weight:800; font-size:12px; color:#cdd7e3; margin-top:2px; }
+  .paneLabel .pl-boost { height:7px; margin-top:5px; border-radius:100px; background:#0b1830; overflow:hidden; }
+  .paneLabel .pl-boostfill { height:100%; background:repeating-linear-gradient(115deg,#FFC93C 0 8px,#ffd766 8px 16px); }
+  #paneDividers { display:none; }
+  #divH { position:fixed; left:0; right:0; top:50%; height:4px; margin-top:-2px; background:#10233F; z-index:16; }
+  #divV { position:fixed; top:0; bottom:0; left:50%; width:4px; margin-left:-2px; background:#10233F; z-index:16; display:none; }
+  #splitTime { display:none; position:fixed; top:14px; left:50%; transform:translateX(-50%); z-index:18;
+    background:#FFC93C; color:#10233F; border:3px solid #10233F; border-radius:100px; box-shadow:0 5px 0 #e0a916;
+    padding:7px 20px; font-family:'Fredoka',sans-serif; font-weight:700; font-size:19px; }
+  #paneFiller { display:none; position:fixed; z-index:16; align-items:center; justify-content:center;
+    background:radial-gradient(ellipse at 50% 40%, #2a2e37, #1c1f26); }
+  #paneFiller .pf-mark { font-family:'Fredoka',sans-serif; font-weight:700; font-size:34px; color:#fff; text-shadow:0 3px 0 #10233F; opacity:.85; }
+  #paneFiller .pf-mark span { color:#FFC93C; }
   /* landscape racing grip: brake under left thumb, gas under right */
   @media (orientation: landscape){
     #phoneUI { gap:8px; padding:10px; }
@@ -222,6 +244,10 @@
     <div id="standings"></div>
     <div id="boostBar"><div class="track"><div class="fill" id="boostFill"></div></div><div class="lab" id="boostLab">BOOST</div></div>
   </div>
+  <div id="paneLabels"><div class="paneLabel"></div><div class="paneLabel"></div><div class="paneLabel"></div><div class="paneLabel"></div></div>
+  <div id="paneDividers"><div id="divH"></div><div id="divV"></div></div>
+  <div id="splitTime">0:00.0</div>
+  <div id="paneFiller"><div class="pf-mark">Go<span>Games</span></div></div>
   <div id="settingsPanel" style="display:none;position:fixed;top:60px;left:18px;z-index:30;
     background:#fff;color:#10233F;border:4px solid #10233F;border-radius:22px;padding:18px 22px;min-width:230px;
     box-shadow:0 10px 0 rgba(16,35,63,.25);">
@@ -881,6 +907,7 @@
       arm: function(){ if (!karts.length) addKart(null); startRace(); },
       auto: function(on){ if (!karts.length) addKart(null); karts[0].auto = !!on; },
       bot: function(){ var k = addKart(null); if (k) k.auto = true; return k ? k.name : 'full'; },
+      _humanBot: function(){ var k = addKart(null); if (k) k.demo = true; return k ? k.name : 'full'; },
       render: function(){ renderer.render(scene, camera); }
     };
 
@@ -1168,7 +1195,7 @@
       ghost.group.visible = true;
     }
     function stepKart(k, dt, now){
-      if (k.auto && race !== 'count'){
+      if ((k.auto || k.demo) && race !== 'count'){
         var tgt = pts[(k.curIdx + 9) % N];
         var desired = Math.atan2(tgt.x - k.pos.x, -(tgt.z - k.pos.z));
         var dh = desired - k.heading;
@@ -1244,6 +1271,95 @@
       }
       return gas;
     }
+    /* ---------- split-screen: one viewport per human racer ---------- */
+    var splitCams = {}; // slot -> PerspectiveCamera (persistent for smooth follow)
+    function humansForView(){ return karts.filter(function(k){ return !k.auto; }); }
+    function viewCamFor(k){
+      if (!splitCams[k.slot]){
+        var vc = new THREE.PerspectiveCamera(62, 1, camera.near, camera.far);
+        vc.position.copy(camera.position);
+        splitCams[k.slot] = vc;
+      }
+      return splitCams[k.slot];
+    }
+    function aimCam(vc, k, dt){
+      var camT = new THREE.Vector3(k.pos.x - Math.sin(k.heading)*8.5, 4.2, k.pos.z + Math.cos(k.heading)*8.5);
+      vc.position.lerp(camT, Math.min(1, dt*3.2));
+      vc.lookAt(k.pos.x + Math.sin(k.heading)*6, 1.2, k.pos.z - Math.cos(k.heading)*6);
+      vc.fov = 62 + Math.min(14, Math.abs(k.v)*.45);
+    }
+    function paneRects(n, W, H){
+      // WebGL viewport coords are bottom-left origin; dl/dt are the DOM (top-left) corner
+      var r = [];
+      if (n === 2){
+        r.push({ x:0, y:H/2, w:W, h:H/2, dl:0,   dt:0   }); // top
+        r.push({ x:0, y:0,   w:W, h:H/2, dl:0,   dt:H/2 }); // bottom
+      } else {
+        var w = W/2, h = H/2, grid = [[0,0],[1,0],[0,1],[1,1]]; // TL,TR,BL,BR
+        for (var i=0;i<n;i++){
+          var c = grid[i][0], rw = grid[i][1];
+          r.push({ x:c*w, y:(rw===0?H/2:0), w:w, h:h, dl:c*w, dt:rw*h });
+        }
+      }
+      return r;
+    }
+    function updatePaneLabels(list, rects, now){
+      var n = list.length;
+      var timeStr = (race==='racing') ? fmt(now - raceStart) : (race==='count' ? 'GET READY' : 'FINISH');
+      var ranked = karts.slice().sort(function(a,b){ return progressOf(b) - progressOf(a); });
+      var labs = document.getElementById('paneLabels').children;
+      for (var i=0;i<4;i++){
+        var el = labs[i];
+        if (i < n){
+          var k = list[i], rc = rects[i], pos = ranked.indexOf(k) + 1;
+          var suf = pos===1?'st':pos===2?'nd':pos===3?'rd':'th';
+          var boosting = now < k.boostUntil, bpct = boosting ? 100 : Math.round(k.boost*100);
+          el.style.display = 'block'; el.style.left = rc.dl + 'px'; el.style.top = rc.dt + 'px';
+          el.style.borderColor = cssColor(k.color);
+          el.innerHTML =
+            '<div class="pl-row"><span class="pl-dot" style="background:'+cssColor(k.color)+'"></span>'+
+            '<span class="pl-name">'+ k.name + (k.charEmoji?' '+k.charEmoji:'') +'</span>'+
+            '<span class="pl-pos">'+pos+suf+'</span></div>'+
+            '<div class="pl-sub">L'+Math.min(k.lap+1,LAPS)+'/'+LAPS+ (n>=3 ? ' · '+timeStr : '') +
+              (k.finished?' 🏁':'')+(now<k.starUntil?' ⭐':'')+(now<k.spinUntil?' 💫':'')+(k.item?' '+itemEmoji(k.item):'')+'</div>'+
+            '<div class="pl-boost"><div class="pl-boostfill" style="width:'+bpct+'%"></div></div>';
+        } else { el.style.display = 'none'; }
+      }
+      var st = document.getElementById('splitTime');
+      if (n === 2){ st.textContent = timeStr; st.style.display = 'block'; } else { st.style.display = 'none'; }
+    }
+    function renderViews(dt, now, lead){
+      var W = innerWidth, H = innerHeight;
+      var humans = humansForView();
+      var splitActive = (race==='racing'||race==='done'||race==='count') && humans.length >= 2;
+      var labelsWrap = document.getElementById('paneLabels'), dividers = document.getElementById('paneDividers');
+      if (splitActive){
+        var list = humans.slice(0, 4), n = list.length, rects = paneRects(n, W, H);
+        renderer.setScissorTest(true);
+        for (var i=0;i<n;i++){
+          var rc = rects[i], k = list[i], vc = viewCamFor(k);
+          aimCam(vc, k, dt); vc.aspect = rc.w / rc.h; vc.updateProjectionMatrix();
+          renderer.setViewport(rc.x, rc.y, rc.w, rc.h);
+          renderer.setScissor(rc.x, rc.y, rc.w, rc.h);
+          renderer.render(scene, vc);
+        }
+        renderer.setScissorTest(false); renderer.setViewport(0, 0, W, H);
+        updatePaneLabels(list, rects, now);
+        document.getElementById('divH').style.display = 'block';
+        document.getElementById('divV').style.display = (n >= 3) ? 'block' : 'none';
+        labelsWrap.style.display = 'block'; dividers.style.display = 'block';
+        var fill = document.getElementById('paneFiller'); // covers the empty 4th quadrant with 3 players
+        if (n === 3){ fill.style.left=(W/2)+'px'; fill.style.top=(H/2)+'px'; fill.style.width=(W/2)+'px'; fill.style.height=(H/2)+'px'; fill.style.display='flex'; }
+        else fill.style.display='none';
+      } else {
+        var focus = humans.length ? humans[0] : lead;
+        if (focus){ aimCam(camera, focus, dt); camera.aspect = W/H; camera.updateProjectionMatrix(); }
+        renderer.setViewport(0, 0, W, H); renderer.render(scene, camera);
+        labelsWrap.style.display = 'none'; dividers.style.display = 'none';
+        document.getElementById('splitTime').style.display = 'none';
+        document.getElementById('paneFiller').style.display = 'none';
+      }
+    }
     function tick(now){
       schedule();
       var dt = Math.min((now - last)/1000, .1); last = now;
@@ -1273,13 +1389,7 @@
 
       var lead = karts[0];
       karts.forEach(function(k){ if (lead && progressOf(k) > progressOf(lead)) lead = k; });
-      if (lead){
-        var camT = new THREE.Vector3(
-          lead.pos.x - Math.sin(lead.heading)*8.5, 4.2, lead.pos.z + Math.cos(lead.heading)*8.5);
-        camera.position.lerp(camT, Math.min(1, dt*3.2));
-        camera.lookAt(lead.pos.x + Math.sin(lead.heading)*6, 1.2, lead.pos.z - Math.cos(lead.heading)*6);
-        camera.fov = 62 + Math.min(14, Math.abs(lead.v) * .45);
-        camera.updateProjectionMatrix();
+      if (lead){ // sun follows the leader; per-view cameras are handled in renderViews()
         sun.position.set(lead.pos.x + 40, 70, lead.pos.z + 30);
         sun.target.position.set(lead.pos.x, 0, lead.pos.z);
       }
@@ -1305,7 +1415,8 @@
 
       var rh = document.getElementById('raceHud');
       document.getElementById('logo').style.display = (race === 'racing' || race === 'count') ? 'none' : 'block';
-      if ((race === 'racing' || race === 'done') && karts.length){
+      var splitOn = (race === 'racing' || race === 'done' || race === 'count') && humansForView().length >= 2;
+      if (!splitOn && (race === 'racing' || race === 'done') && karts.length){
         rh.style.display = 'block';
         var me = karts[0];
         var ranked = karts.slice().sort(function(a,b){ return progressOf(b) - progressOf(a); });
@@ -1353,7 +1464,8 @@
           mmCtx.strokeStyle = '#10233F'; mmCtx.lineWidth = 2;
           mmCtx.beginPath(); mmCtx.arc(kp[0], kp[1], 5.5, 0, 7); mmCtx.fill(); mmCtx.stroke();
         });
-        renderer.render(scene, camera);
+        document.getElementById('mmWrap').style.display = splitOn ? 'none' : 'block';
+        renderViews(dt, now, lead);
       }
     }
     schedule();
