@@ -300,24 +300,17 @@
 <div id="phoneUI">
   <div id="phoneStatus">Connecting to laptop…</div>
   <button class="bigbtn" id="btnMotion" style="display:none">ENABLE MOTION SENSORS</button>
-  <div id="phoneInstr" style="display:none;font-size:17px;font-weight:700;line-height:1.6;color:#fff;max-width:340px;text-shadow:0 1px 0 rgba(16,35,63,.25)">
-    Turn your phone <b>sideways</b> — <b>it's your steering wheel.</b><br>
-    Tilt to steer · hold GAS · <b>double-tap GAS to BOOST</b> when charged (watch the big screen)!<br>
-    Hold <b>GAS + BRAKE</b> through a corner to <b>DRIFT</b> — let go for a speed burst! 💨<br>
-    Grab <b>item boxes</b> 🎁 on the track, then tap <b>USE</b> to fire — 🍄 boost, 🍌 banana, ⭐ star!
-  </div>
   <div id="steerDial"></div>
   <div id="itemBtn" style="display:none;opacity:.5;font-family:'Fredoka',sans-serif;font-weight:700;font-size:26px;
     padding:14px 20px;border:3px solid #10233F;border-radius:18px;background:#FFC93C;color:#10233F;
     box-shadow:0 6px 0 #e0a916;min-width:150px;text-align:center">—</div>
-  <button class="bigbtn" id="btnCal" style="display:none">🎯 HOLD WHEEL STRAIGHT — TAP TO CENTER</button>
+  <button class="bigbtn" id="btnCal" style="display:none">🎯 CENTER</button>
   <div id="pedals">
     <div class="pedal" id="brakeBtn">🛑 BRAKE</div>
     <div class="pedal" id="gasBtn">🏁 GAS</div>
   </div>
   <button class="bigbtn" id="btnArm" style="display:none">🚦 START RACE</button>
   <div id="phoneResult" style="font-family:'Fredoka',sans-serif;font-size:32px;font-weight:700;color:#fff;min-height:40px;text-shadow:0 3px 0 #10233F"></div>
-  <div class="warn">🏎️ GOGAMES is not responsible for imaginary whiplash.</div>
 </div>
 
 <script>
@@ -1481,7 +1474,6 @@
     var btnMotion = document.getElementById('btnMotion');
     var btnCal = document.getElementById('btnCal');
     var btnArm = document.getElementById('btnArm');
-    var instr = document.getElementById('phoneInstr');
     var pedals = document.getElementById('pedals');
     var gasBtn = document.getElementById('gasBtn');
     var brakeBtn = document.getElementById('brakeBtn');
@@ -1503,6 +1495,7 @@
       conn.on('data', function(msg){
         if (msg && msg.t === 'result'){
           result.textContent = msg.line;
+          if (/…|GO/.test(msg.line || '')) btnArm.style.display = 'none'; // race started — clear the START button
           if (navigator.vibrate) navigator.vibrate(80);
         }
         if (msg && msg.t === 'buzz'){
@@ -1553,12 +1546,11 @@
         if (res.every(function(r){ return r === 'granted'; })){
           startSensors();
           btnMotion.style.display = 'none';
-          instr.style.display = 'block';
           btnCal.style.display = 'block';
           btnArm.style.display = 'block';
           pedals.style.display = 'flex';
           itemBtn.style.display = 'block';
-          status.textContent = 'Wheel live ✔ — hold sideways and drive';
+          status.textContent = 'Wheel live ✔';
         } else {
           status.textContent = 'Motion permission denied — enable in Settings > Safari.';
         }
