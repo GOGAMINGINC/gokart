@@ -130,6 +130,9 @@
   .paneLabel .pl-name { font-weight:900; font-size:15px; flex:1; white-space:nowrap; }
   .paneLabel .pl-pos { font-family:'Fredoka',sans-serif; font-weight:700; font-size:16px; color:#FFC93C; }
   .paneLabel .pl-sub { font-weight:800; font-size:12px; color:#cdd7e3; margin-top:2px; }
+  .paneLabel .pl-flash { font-family:'Fredoka',sans-serif; font-weight:700; font-size:15px; color:#FFC93C;
+    margin-top:3px; text-shadow:0 2px 0 #10233F; animation:plflash .5s ease-in-out infinite alternate; }
+  @keyframes plflash { from{ opacity:.65; } to{ opacity:1; } }
   .paneLabel .pl-boost { height:7px; margin-top:5px; border-radius:100px; background:#0b1830; overflow:hidden; }
   .paneLabel .pl-boostfill { height:100%; background:repeating-linear-gradient(115deg,#FFC93C 0 8px,#ffd766 8px 16px); }
   #paneDividers { display:none; }
@@ -264,10 +267,17 @@
       <button class="castBtn" data-char="sticky" style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;padding:8px 4px;border:3px solid #10233F;border-radius:10px;background:#fff;color:#10233F">🟠 Butter</button>
       <button class="castBtn" data-char="glue" style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;padding:8px 4px;border:3px solid #10233F;border-radius:10px;background:#fff;color:#10233F">🟦 Splash</button>
     </div>
-    <div style="font-size:12px;font-weight:800;margin-top:8px;"><a href="https://gogaminginc.github.io/gogolf/" style="color:#2FBF71;text-decoration:none;">⛳ Play GOGOLF →</a></div>
+    <div style="font-size:13px;font-weight:800;color:#8895a7;margin:12px 0 6px;">Switch game</div>
+    <div style="display:flex;gap:6px;">
+      <a href="https://gogaminginc.github.io/gogolf/" style="flex:1;text-align:center;background:#2FBF71;color:#fff;text-decoration:none;font-weight:900;font-size:13px;padding:9px 6px;border:2px solid #10233F;border-radius:10px;">⛳ GOGOLF</a>
+      <a href="https://gogaminginc.github.io/gosaber/" style="flex:1;text-align:center;background:#8a53d6;color:#fff;text-decoration:none;font-weight:900;font-size:13px;padding:9px 6px;border:2px solid #10233F;border-radius:10px;">⚔️ GOSABER</a>
+    </div>
     <div style="font-size:11px;font-weight:700;color:#8895a7;margin-top:8px;">click the Go Kart logo to close</div>
   </div>
   <div id="bigMsg"></div>
+  <button id="raceAgain" style="display:none;position:fixed;left:50%;bottom:80px;transform:translateX(-50%);z-index:26;
+    font-family:'Fredoka',sans-serif;font-weight:700;font-size:22px;padding:15px 34px;border:3px solid #10233F;border-radius:100px;
+    background:#FFC93C;color:#10233F;box-shadow:0 6px 0 #e0a916;cursor:pointer">🔁 RACE AGAIN</button>
   <div id="stateMsg">Waiting for drivers</div>
   <div id="mmWrap"><div class="lab">CIRCUIT 1</div>
     <canvas id="minimap" width="180" height="180" style="display:block;border-radius:10px"></canvas>
@@ -299,6 +309,12 @@
 <!-- PHONE -->
 <div id="phoneUI">
   <div id="phoneStatus">Connecting to laptop…</div>
+  <input id="pName" maxlength="12" placeholder="Your name" autocomplete="off"
+    style="display:none;font-family:'Nunito',sans-serif;font-weight:800;font-size:18px;text-align:center;padding:13px;border:3px solid #10233F;border-radius:16px;width:100%;max-width:320px;color:#10233F">
+  <div id="pRacerWrap" style="display:none;width:100%;max-width:320px;text-align:center">
+    <div style="color:#fff;font-weight:900;font-size:13px;letter-spacing:.08em;margin-bottom:7px;text-shadow:0 1px 0 rgba(16,35,63,.3)">PICK YOUR RACER</div>
+    <div id="pRacer" style="display:flex;flex-wrap:wrap;gap:7px;justify-content:center"></div>
+  </div>
   <button class="bigbtn" id="btnMotion" style="display:none">ENABLE MOTION SENSORS</button>
   <div id="steerDial"></div>
   <div id="itemBtn" style="display:none;opacity:.5;font-family:'Fredoka',sans-serif;font-weight:700;font-size:26px;
@@ -868,6 +884,7 @@
       hazards.forEach(function(h){ scene.remove(h.mesh); }); hazards = [];
       itemBoxes.forEach(function(b){ b.active = true; b.group.visible = true; b.respawnAt = 0; });
       document.getElementById('connectPanel').style.display = 'none';
+      document.getElementById('raceAgain').style.display = 'none';
       document.body.classList.remove('inLobby');
       race = 'count'; countStart = performance.now(); lastCountBeep = -1;
       bigMsg.style.display = 'block';
@@ -875,6 +892,9 @@
     }
     document.getElementById('startEngines').addEventListener('click', function(){
       if (karts.length && race !== 'count') startRace();
+    });
+    document.getElementById('raceAgain').addEventListener('click', function(){
+      if (karts.length) startRace();
     });
     function tryBoost(k){
       if (race === 'racing' && !k.finished && k.boost >= 1 && performance.now() > k.boostUntil){
@@ -886,6 +906,15 @@
     }
     function onData(msg, k){
       if (!msg || !msg.t || !k) return;
+      if (msg.t === 'join'){
+        if (msg.cid) k.cid = msg.cid;
+        if (msg.name){ k.name = String(msg.name).slice(0,12); }
+        if (msg.char){ swapDriver(k, msg.char); }
+        stateMsg.textContent = k.name + ' joined as ' + k.charName + '! Hit START ENGINES when everyone is in';
+        if (k.conn){ try { k.conn.send({ t:'result', line: 'You are ' + k.charName + ' ' + k.charEmoji }); } catch(e){} }
+        updateLobby();
+        return;
+      }
       if (msg.t === 'ctl'){
         k.ctl.s = msg.s || 0;
         k.ctl.g = !!msg.g;
@@ -1050,21 +1079,28 @@
         k.lap++;
         k.halfFlag = false;
         k.lapStart = now;
+        var split = humansForView().length >= 2; // in split-screen, banners belong to each player's pane
         if (k.lap >= LAPS){
           k.finished = true;
           k.finishTime = now - raceStart;
           beep(880,.3,'triangle',.22);
-          bigMsg.textContent = '🏁 ' + k.name + ' FINISHED!';
-          bigMsg.style.display = 'block';
-          setTimeout(function(){ if (race === 'racing') bigMsg.style.display = 'none'; }, 1400);
+          k.flash = '🏁 FINISHED!'; k.flashUntil = now + 1600;
+          if (!split){
+            bigMsg.textContent = '🏁 ' + k.name + ' FINISHED!';
+            bigMsg.style.display = 'block';
+            setTimeout(function(){ if (race === 'racing') bigMsg.style.display = 'none'; }, 1400);
+          }
           if (k.conn){ try { k.conn.send({ t:'result', line: '🏁 Finished! ' + fmt(k.finishTime) }); } catch(e){} }
           maybeEndRace(now);
         } else {
           beep(660,.18,'triangle',.18);
           if (k.lap === LAPS - 1){ // the bell lap
-            bigMsg.textContent = '🔔 FINAL LAP!';
-            bigMsg.style.display = 'block';
-            setTimeout(function(){ if (race === 'racing') bigMsg.style.display = 'none'; }, 1300);
+            k.flash = '🔔 FINAL LAP!'; k.flashUntil = now + 1500;
+            if (!split){
+              bigMsg.textContent = '🔔 FINAL LAP!';
+              bigMsg.style.display = 'block';
+              setTimeout(function(){ if (race === 'racing') bigMsg.style.display = 'none'; }, 1300);
+            }
             beep(990,.25,'triangle',.2);
           }
           if (k.conn){ try { k.conn.send({ t:'result', line: 'Lap ' + k.lap + ': ' + fmt(lt) +
@@ -1091,7 +1127,9 @@
         '</span><br><span style="font-size:20px">tap START RACE to go again</span>';
       bigMsg.style.display = 'block';
       stateMsg.textContent = 'Race complete!';
+      document.getElementById('raceAgain').style.display = 'block';
       broadcast({ t:'result', line: 'Winner: ' + order[0].name + ' ' + (order[0].charEmoji||'') });
+      broadcast({ t:'again' }); // tell phones to show their START button again
       beep(880,.4,'triangle',.25); setTimeout(function(){ beep(1170,.5,'triangle',.25); }, 180);
     }
 
@@ -1240,11 +1278,11 @@
       if (race === 'racing' && !k.finished && !k.offroad && !boosting && !drifting){
         k.boost = Math.min(1, k.boost + dt * .08); // ~12s to charge
       }
-      var maxV = k.offroad ? 10 : 30 * st.sp * (boosting ? 1.35 : 1) * (now < k.starUntil ? 1.2 : 1);
+      var maxV = k.offroad ? 17 : 30 * st.sp * (boosting ? 1.35 : 1) * (now < k.starUntil ? 1.2 : 1);
       if (gas) k.v += (boosting ? 24 : 13) * dt;
       if (brake && !drifting) k.v -= 24 * dt;   // during a drift the brake steers, it doesn't stop you
       if (drifting) k.v -= k.v * .12 * dt;       // a little scrub while sliding
-      k.v -= k.v * (k.offroad ? 1.7 : .45) * dt;
+      k.v -= k.v * (k.offroad ? 0.95 : .45) * dt;
       k.v = Math.max(-6, Math.min(maxV, k.v));
       if (Math.abs(k.v) > .3){
         var turn = steerN * 2.0 * st.hd * dt * Math.min(1, Math.abs(k.v)/7) * (k.v < 0 ? -1 : 1);
@@ -1326,6 +1364,7 @@
             '<span class="pl-pos">'+pos+suf+'</span></div>'+
             '<div class="pl-sub">L'+Math.min(k.lap+1,LAPS)+'/'+LAPS+ (n>=3 ? ' · '+timeStr : '') +
               (k.finished?' 🏁':'')+(now<k.starUntil?' ⭐':'')+(now<k.spinUntil?' 💫':'')+(k.item?' '+itemEmoji(k.item):'')+'</div>'+
+            ((k.flash && now < k.flashUntil) ? '<div class="pl-flash">'+k.flash+'</div>' : '')+
             '<div class="pl-boost"><div class="pl-boostfill" style="width:'+bpct+'%"></div></div>';
         } else { el.style.display = 'none'; }
       }
@@ -1494,19 +1533,74 @@
     var heldItem = null;
     itemBtn.addEventListener('click', function(){ if (heldItem && conn && connected) conn.send({ t:'item' }); });
 
+    /* ---- identity: name + racer + stable id so a reconnect stays you ---- */
+    var RACERS = [
+      { id:'pencil', name:'Coral', col:'#FF5A5F' }, { id:'fork', name:'Sunny', col:'#FFC93C' },
+      { id:'crayon', name:'Fern', col:'#2FBF71' }, { id:'highlighter', name:'Sky', col:'#6fd3ff' },
+      { id:'mug', name:'Grape', col:'#8a53d6' }, { id:'eraser', name:'Blossom', col:'#ff9ec4' },
+      { id:'sticky', name:'Butter', col:'#FDD64B' }, { id:'glue', name:'Splash', col:'#23A6D5' }
+    ];
+    var myName = '', myChar = 'pencil', myCid = '';
+    try { myName = localStorage.getItem('gokart_name') || ''; } catch(e){}
+    try { myChar = localStorage.getItem('gogames_character') || 'pencil'; } catch(e){}
+    try { myCid = localStorage.getItem('gogames_cid') || ''; } catch(e){}
+    if (!myCid){ myCid = 'c' + Math.random().toString(36).slice(2) + Date.now().toString(36); try { localStorage.setItem('gogames_cid', myCid); } catch(e){} }
+    var pName = document.getElementById('pName'), pRacer = document.getElementById('pRacer'),
+        pRacerWrap = document.getElementById('pRacerWrap');
+    pName.value = myName;
+    function sendJoin(){ if (conn && connected) conn.send({ t:'join', name: myName || 'Player', char: myChar, cid: myCid }); }
+    function paintRacer(){
+      Array.prototype.forEach.call(pRacer.children, function(b){
+        var on = b.getAttribute('data-id') === myChar;
+        b.style.outline = on ? '3px solid #10233F' : 'none';
+        b.style.transform = on ? 'scale(1.12)' : 'none';
+        b.style.opacity = on ? '1' : '.85';
+      });
+    }
+    RACERS.forEach(function(rc){
+      var b = document.createElement('button');
+      b.setAttribute('data-id', rc.id);
+      b.title = rc.name;
+      b.style.cssText = 'width:38px;height:38px;border-radius:50%;border:3px solid #10233F;cursor:pointer;background:'+rc.col;
+      b.addEventListener('click', function(){
+        myChar = rc.id; try { localStorage.setItem('gogames_character', myChar); } catch(e){}
+        paintRacer();
+        if (conn && connected) conn.send({ t:'char', id: myChar });
+        if (navigator.vibrate) navigator.vibrate(30);
+      });
+      pRacer.appendChild(b);
+    });
+    paintRacer();
+    pName.addEventListener('input', function(){
+      myName = pName.value.trim();
+      try { localStorage.setItem('gokart_name', myName); } catch(e){}
+      sendJoin();
+    });
+
     var conn = null, connected = false;
     var peer = new Peer({ debug:1 });
     peer.on('open', function(){
       conn = peer.connect('gokart-'+code, { reliable:true });
       conn.on('open', function(){
         connected = true;
-        status.textContent = 'Connected — you are a wheel ✔';
+        status.textContent = 'Connected ✔ — name yourself & pick a racer';
+        pName.style.display = 'block';
+        pRacerWrap.style.display = 'block';
         btnMotion.style.display = 'block';
+        sendJoin();
       });
       conn.on('data', function(msg){
+        if (msg && msg.t === 'again'){ // race finished — let this phone start another
+          if (motionOK){ btnArm.style.display = 'block'; }
+          pName.style.display = 'block'; pRacerWrap.style.display = 'block';
+          result.textContent = 'Race done — pick again or START';
+        }
         if (msg && msg.t === 'result'){
           result.textContent = msg.line;
-          if (/…|GO/.test(msg.line || '')) btnArm.style.display = 'none'; // race started — clear the START button
+          if (/…|GO/.test(msg.line || '')){ // race started — clear the START button + setup UI
+            btnArm.style.display = 'none';
+            pName.style.display = 'none'; pRacerWrap.style.display = 'none';
+          }
           if (navigator.vibrate) navigator.vibrate(80);
         }
         if (msg && msg.t === 'buzz'){
@@ -1532,20 +1626,17 @@
     var gNow = { x:0, y:-9.8 };
     var gas = false, brake = false;
     var baseCard = null;
+    var motionOK = false;
     function rawWheel(){
       var a = Math.atan2(gNow.x, -gNow.y);
       var HALF = Math.PI / 2;
-      var nearest = Math.round(a / HALF) * HALF;
-      if (baseCard === null) baseCard = nearest;
+      // lock the reference to whatever orientation the phone was in the first time we read it
+      // (or when the player taps CENTER). We deliberately do NOT re-snap mid-drive — that was
+      // what made hard cornering flip the wheel to a new 90° cardinal and reverse the steering.
+      if (baseCard === null) baseCard = Math.round(a / HALF) * HALF;
       var dev = a - baseCard;
       while (dev > Math.PI) dev -= Math.PI * 2;
       while (dev < -Math.PI) dev += Math.PI * 2;
-      if (nearest !== baseCard && Math.abs(a - nearest) < .3 && Math.abs(dev) > Math.PI / 3){
-        baseCard = nearest;
-        dev = a - baseCard;
-        while (dev > Math.PI) dev -= Math.PI * 2;
-        while (dev < -Math.PI) dev += Math.PI * 2;
-      }
       return Math.max(-80, Math.min(80, dev * 180 / Math.PI));
     }
     function steerDeg(){ return rawWheel() - trim; }
@@ -1553,8 +1644,11 @@
       var asks = [];
       if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function')
         asks.push(DeviceMotionEvent.requestPermission());
+      // best-effort: keep the screen in landscape so buttons don't jump around mid-race
+      try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(function(){}); } catch(e){}
       Promise.all(asks.length ? asks : [Promise.resolve('granted')]).then(function(res){
         if (res.every(function(r){ return r === 'granted'; })){
+          motionOK = true;
           startSensors();
           btnMotion.style.display = 'none';
           btnCal.style.display = 'block';
@@ -1568,6 +1662,10 @@
       }).catch(function(){ status.textContent = 'Motion needs HTTPS — reload the page.'; });
     });
     btnCal.addEventListener('click', function(){
+      // re-lock the steering reference to however the phone is being held right now,
+      // then fine-trim so this position reads as straight
+      var a = Math.atan2(gNow.x, -gNow.y), HALF = Math.PI / 2;
+      baseCard = Math.round(a / HALF) * HALF;
       trim = rawWheel();
       btnCal.textContent = '🎯 CENTERED — TAP AGAIN ANYTIME';
       if (navigator.vibrate) navigator.vibrate(40);
